@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICS Kalender-Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 500;
+      margin: 0 0 1.5rem;
+    }
+    .calname-row {
+      margin-bottom: 1.25rem;
+    }
+    label {
+      font-size: 12px;
+      color: #666;
+      display: block;
+      margin-bottom: 4px;
+    }
+    input, textarea {
+      width: 100%;
+      font-size: 14px;
+      font-family: inherit;
+      padding: 7px 10px;
+      border: 0.5px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a18;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus {
+      border-color: #888;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 56px;
+    }
+    .event-card {
+      background: #fff;
+      border: 0.5px solid #ddd;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .event-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .full { grid-column: 1 / -1; }
+    .remove-btn {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #999;
+      padding: 0;
+      line-height: 1;
+    }
+    .remove-btn:hover { color: #333; }
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 0.5px solid #ccc;
+      background: #fff;
+      color: #1a1a18;
+      transition: background 0.1s;
+    }
+    button:hover { background: #f0f0ee; }
+    .add-btn {
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    .dl-btn {
+      width: 100%;
+      font-size: 15px;
+      padding: 10px;
+      background: #e6f1fb;
+      color: #185fa5;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .dl-btn:hover { background: #cce0f5; }
+    .hint {
+      font-size: 12px;
+      color: #888;
+      margin-top: 10px;
+      text-align: center;
+    }
+    .event-num {
+      font-size: 12px;
+      font-weight: 500;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .event-grid { grid-template-columns: 1fr; }
+      .full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>ICS Kalender-Generator</h1>
+
+  <div class="calname-row">
+    <label>Kalender-Name</label>
+    <input type="text" id="calname" value="Meine Termine" />
+  </div>
+
+  <div id="events"></div>
+
+  <button class="add-btn" onclick="addEvent()">+ Termin hinzufügen</button>
+  <button class="dl-btn" onclick="downloadICS()">ICS-Datei herunterladen</button>
+  <p class="hint">Die Datei auf einen Webserver / GitHub Gist hochladen → QR-Code auf den Link generieren</p>
+</div>
+
+<script>
+  let eventCount = 0;
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function toICSDate(dateStr, timeStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + 'T' + (timeStr || '00:00'));
+    return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) +
+           'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00';
+  }
+
+  function addEvent(data) {
+    const id = ++eventCount;
+    const d = data || {};
+    const div = document.createElement('div');
+    div.className = 'event-card';
+    div.id = 'ev-' + id;
+    div.innerHTML = `
+      <button class="remove-btn" onclick="document.getElementById('ev-${id}').remove()" title="Entfernen">✕</button>
+      <div class="event-num">Termin ${id}</div>
+      <div class="event-grid">
+        <div class="full">
+          <label>Titel *</label>
+          <input type="text" class="ev-title" value="${d.title || ''}" placeholder="z.B. Vereinstreffen" />
+        </div>
+        <div>
+          <label>Datum *</label>
+          <input type="date" class="ev-date" value="${d.date || ''}" />
+        </div>
+        <div>
+          <label>Uhrzeit (optional)</label>
+          <input type="time" class="ev-time" value="${d.time || ''}" />
+        </div>
+        <div>
+          <label>Enddatum</label>
+          <input type="date" class="ev-edate" value="${d.edate || ''}" />
+        </div>
+        <div>
+          <label>Endzeit</label>
+          <input type="time" class="ev-etime" value="${d.etime || ''}" />
+        </div>
+        <div class="full">
+          <label>Ort</label>
+          <input type="text" class="ev-loc" value="${d.loc || ''}" placeholder="z.B. Vereinshaus, Musterstrasse 1" />
+        </div>
+        <div class="full">
+          <label>Beschreibung</label>
+          <textarea class="ev-desc">${d.desc || ''}</textarea>
+        </div>
+      </div>
+    `;
+    document.getElementById('events').appendChild(div);
+  }
+
+  function uid() {
+    return Math.random().toString(36).substr(2, 9) + '-' +
+           Date.now().toString(36) + '@ics-generator';
+  }
+
+  function escapeICS(s) {
+    return (s || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g, '\\;')
+      .replace(/,/g, '\\,')
+      .replace(/\n/g, '\\n');
+  }
+
+  function downloadICS() {
+    const cards = document.querySelectorAll('.event-card');
+    if (!cards.length) {
+      alert('Bitte mindestens einen Termin hinzufügen.');
+      return;
+    }
+
+    const calname = document.getElementById('calname').value.trim() || 'Termine';
+    let lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//ICS Generator//DE',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:' + escapeICS(calname),
+    ];
+
+    let valid = true;
+
+    cards.forEach(card => {
+      const title = card.querySelector('.ev-title').value.trim();
+      const date  = card.querySelector('.ev-date').value;
+      const time  = card.querySelector('.ev-time').value;
+      const edate = card.querySelector('.ev-edate').value;
+      const etime = card.querySelector('.ev-etime').value;
+      const loc   = card.querySelector('.ev-loc').value.trim();
+      const desc  = card.querySelector('.ev-desc').value.trim();
+
+      if (!title || !date) { valid = false; return; }
+
+      const isAllDay = !time;
+      let dtstart, dtend, dttype;
+
+      if (isAllDay) {
+        dttype = ';VALUE=DATE';
+        dtstart = date.replace(/-/g, '');
+        if (edate) {
+          dtend = edate.replace(/-/g, '');
+        } else {
+          const d = new Date(date);
+          d.setDate(d.getDate() + 1);
+          dtend = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+        }
+      } else {
+        dttype = '';
+        dtstart = toICSDate(date, time);
+        dtend = toICSDate(edate || date, etime || time);
+        if (!dtend || dtend === dtstart) {
+          const d = new Date(date + 'T' + time);
+          d.setHours(d.getHours() + 1);
+          dtend = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) +
+                  'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00';
+        }
+      }
+
+      lines.push('BEGIN:VEVENT');
+      lines.push('UID:' + uid());
+      lines.push('DTSTAMP:' + toICSDate(new Date().toISOString().split('T')[0], new Date().toTimeString().substr(0,5)));
+      lines.push('DTSTART' + dttype + ':' + dtstart);
+      lines.push('DTEND'   + dttype + ':' + dtend);
+      lines.push('SUMMARY:' + escapeICS(title));
+      if (loc)  lines.push('LOCATION:'    + escapeICS(loc));
+      if (desc) lines.push('DESCRIPTION:' + escapeICS(desc));
+      lines.push('END:VEVENT');
+    });
+
+    if (!valid) {
+      alert('Bitte bei jedem Termin Titel und Datum ausfüllen.');
+      return;
+    }
+
+    lines.push('END:VCALENDAR');
+
+    const content = lines.join('\r\n');
+    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = calname.replace(/[^a-z0-9äöü]/gi, '_') + '.ics';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+
+  // Start with one empty event
+  addEvent({ date: new Date().toISOString().split('T')[0] });
+</script>
+</body>
+</html>
