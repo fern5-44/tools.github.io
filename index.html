@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e0e0d;
+      --surface: #171715;
+      --surface2: #1f1f1c;
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.14);
+      --text: #f0ede8;
+      --text-muted: #7a7870;
+      --text-dim: #4a4844;
+      --accent: #c8f060;
+      --accent-dim: rgba(200,240,96,0.12);
+      --accent-hover: rgba(200,240,96,0.2);
+      --font-display: 'DM Mono', monospace;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* --- NAVBAR --- */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 56px;
+      background: rgba(14,14,13,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      letter-spacing: 0.03em;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .nav-links a.active {
+      color: var(--accent);
+    }
+
+    .nav-badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 0.5px solid rgba(200,240,96,0.25);
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* hamburger for mobile */
+    .nav-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .nav-toggle span {
+      display: block;
+      width: 22px;
+      height: 1.5px;
+      background: var(--text-muted);
+      transition: transform 0.2s, opacity 0.2s;
+    }
+
+    /* --- HERO --- */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 7rem 2.5rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px; right: -200px;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,240,96,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.1s forwards;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 300;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      max-width: 700px;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.2s forwards;
+    }
+
+    .hero-title em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--text-muted);
+      max-width: 440px;
+      line-height: 1.7;
+      margin-bottom: 3rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.3s forwards;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 11px 22px;
+      border-radius: 8px;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: opacity 0.15s, transform 0.15s;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.4s forwards;
+    }
+
+    .hero-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    .hero-cta svg { width: 14px; height: 14px; }
+
+    /* --- SECTION --- */
+    section {
+      padding: 6rem 2.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 3rem;
+      letter-spacing: -0.01em;
+    }
+
+    /* --- TOOLS GRID --- */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .tool-card {
+      background: var(--surface);
+      padding: 1.75rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: background 0.15s;
+      position: relative;
+    }
+
+    .tool-card:hover {
+      background: var(--surface2);
+    }
+
+    .tool-card:hover .tool-arrow {
+      opacity: 1;
+      transform: translate(2px, -2px);
+    }
+
+    .tool-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--accent-dim);
+      border: 0.5px solid rgba(200,240,96,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.25rem;
+    }
+
+    .tool-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--accent);
+    }
+
+    .tool-name {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--text-muted);
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .tool-tag {
+      font-family: var(--font-display);
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: var(--surface2);
+      color: var(--text-dim);
+      border: 0.5px solid var(--border);
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .tool-tag.new {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-color: rgba(200,240,96,0.2);
+    }
+
+    .tool-arrow {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      color: var(--text-dim);
+      opacity: 0;
+      transition: opacity 0.15s, transform 0.15s;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    /* placeholder card */
+    .tool-card.placeholder {
+      border: 0.5px dashed var(--border);
+      background: transparent;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+      cursor: default;
+    }
+
+    .tool-card.placeholder:hover {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .placeholder-text {
+      font-family: var(--font-display);
+      font-size: 12px;
+      color: var(--text-dim);
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    /* --- DIVIDER --- */
+    .divider {
+      border: none;
+      border-top: 0.5px solid var(--border);
+      margin: 0 2.5rem;
+    }
+
+    /* --- FOOTER --- */
+    footer {
+      padding: 2rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 0.5px solid var(--border);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      font-family: var(--font-display);
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+    }
+
+    .footer-note {
+      font-family: var(--font-display);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.03em;
+    }
+
+    /* --- ANIMATIONS --- */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- MOBILE --- */
+    @media (max-width: 640px) {
+      nav { padding: 0 1.25rem; }
+      .nav-links {
+        display: none;
+        position: fixed;
+        top: 56px; left: 0; right: 0;
+        background: var(--surface);
+        border-bottom: 0.5px solid var(--border);
+        flex-direction: column;
+        padding: 1rem;
+        gap: 4px;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 10px 14px; }
+      .nav-toggle { display: flex; }
+      .hero { padding: 6rem 1.25rem 3rem; }
+      section { padding: 4rem 1.25rem; }
+      footer { padding: 1.5rem 1.25rem; }
+      .divider { margin: 0 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav>
+    <a href="#" class="nav-logo">tools/</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#tools" class="active">Tools</a></li>
+      <li><a href="#about">Über</a></li>
+      <li>
+        <a href="ics-generator.html">
+          ICS Generator
+          <span class="nav-badge">neu</span>
+        </a>
+      </li>
+    </ul>
+    <div class="nav-toggle" id="navToggle" onclick="toggleNav()">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <p class="hero-eyebrow">Kleine Tools. Grosse Wirkung.</p>
+    <h1 class="hero-title">Alles was du<br/>brauchst, <em>direkt</em><br/>im Browser.</h1>
+    <p class="hero-sub">
+      Einfache, schnelle Helfer für den Alltag —
+      keine Registrierung, keine Tracker, kein Aufwand.
+    </p>
+    <a href="#tools" class="hero-cta">
+      Tools entdecken
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M3 8h10M9 4l4 4-4 4"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- TOOLS SECTION -->
+  <section id="tools">
+    <p class="section-label">Verfügbare Tools</p>
+    <h2 class="section-title">Was kannst du damit machen?</h2>
+
+    <div class="tools-grid">
+
+      <!-- ICS Generator -->
+      <a class="tool-card" href="ics-generator.html">
+        <span class="tool-arrow">↗</span>
+        <div class="tool-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <path d="M16 2v4M8 2v4M3 10h18"/>
+            <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+          </svg>
+        </div>
+        <div class="tool-name">ICS Kalender-Generator</div>
+        <div class="tool-desc">Mehrere Termine in eine .ics-Datei packen und per QR-Code teilen — kompatibel mit Apple, Google und Outlook.</div>
+        <span class="tool-tag new">neu</span>
+      </a>
+
+      <!-- Placeholder 2 -->
+      <div class="tool-card placeholder">
+        <p class="placeholder-text">Nächstes Tool<br/>kommt bald</p>
+      </div>
+
+      <!-- Placeholder 3 -->
+      <div class="tool-card placeholder">
+        <p class="placeholder-text">Nächstes Tool<br/>kommt bald</p>
+      </div>
+
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ABOUT SECTION -->
+  <section id="about">
+    <p class="section-label">Über diese Seite</p>
+    <h2 class="section-title">Warum tools/?</h2>
+    <p style="font-size: 15px; font-weight: 300; color: var(--text-muted); max-width: 520px; line-height: 1.8;">
+      Manchmal braucht man ein kleines Werkzeug für eine konkrete Aufgabe —
+      ohne sich durch überladene Webseiten zu kämpfen.
+      Hier entstehen nach und nach einfache Browser-Tools,
+      die ohne Installation, Login oder Werbung funktionieren.
+    </p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-logo">tools/</span>
+    <span class="footer-note">läuft lokal · keine Daten werden gesendet</span>
+  </footer>
+
+  <script>
+    function toggleNav() {
+      document.getElementById('navLinks').classList.toggle('open');
+    }
+
+    // Smooth active link highlight on scroll
+    const sections = document.querySelectorAll('section[id], div[id]');
+    const navLinks = document.querySelectorAll('.nav-links a');
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(s => {
+        if (window.scrollY >= s.offsetTop - 80) current = s.id;
+      });
+      navLinks.forEach(a => {
+        a.classList.remove('active');
+        if (a.getAttribute('href') === '#' + current) a.classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>
