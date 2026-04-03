@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Familienstammbaum</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --cream: #FAF7F2;
+    --warm: #F2EDE4;
+    --ink: #1C1A17;
+    --ink-soft: #4A4640;
+    --ink-muted: #8C887F;
+    --accent: #8B6914;
+    --accent-light: #C4961E;
+    --accent-pale: #F5EDD8;
+    --line: #D4CABB;
+    --white: #FFFFFF;
+    --danger: #8B2E1A;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .site-header {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .site-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+  }
+  .site-header p {
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .header-actions { display: flex; gap: 0.5rem; }
+
+  /* TABS */
+  .tabs {
+    background: var(--warm);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    padding: 0 2rem;
+    gap: 0;
+  }
+  .tab-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.85rem 1.2rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+  /* LAYOUT */
+  .content { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 0.55rem 1.1rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-pale); }
+  .btn.primary { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .btn.primary:hover { background: var(--accent); border-color: var(--accent); color: var(--white); }
+  .btn.danger-btn { border-color: var(--line); color: var(--danger); }
+  .btn.danger-btn:hover { background: #FDF0ED; border-color: var(--danger); }
+  .btn.gold { background: var(--accent); color: var(--white); border-color: var(--accent); }
+  .btn.gold:hover { background: var(--accent-light); border-color: var(--accent-light); }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+  .form-group label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .form-group input, .form-group select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+  /* CARDS */
+  .person-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .person-card:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(139,105,20,0.08); }
+  .avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .avatar.m { background: #E8EEF8; color: #2E4A8B; }
+  .avatar.f { background: #F5E8EF; color: #8B2E5A; }
+  .avatar.u { background: var(--warm); color: var(--ink-muted); }
+  .person-info { flex: 1; min-width: 0; }
+  .person-name { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; }
+  .person-dates { font-size: 0.78rem; color: var(--ink-muted); margin-top: 3px; }
+  .card-actions { display: flex; gap: 0.4rem; }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+  }
+  .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; color: var(--accent); }
+  .stat-lbl { font-size: 0.75rem; color: var(--ink-muted); margin-top: 2px; letter-spacing: 0.04em; }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .search-wrap { position: relative; flex: 1; }
+  .search-wrap input { width: 100%; padding-left: 2.2rem; }
+  .search-icon { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); color: var(--ink-muted); font-size: 0.9rem; pointer-events: none; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(28,26,23,0.55);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 580px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; }
+  .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--ink-muted); padding: 0.2rem; line-height: 1; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+
+  /* TREE */
+  .tree-toolbar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+  .tree-wrap {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: auto;
+    min-height: 480px;
+    padding: 2rem;
+    position: relative;
+  }
+  .tree-inner { display: inline-block; min-width: 100%; }
+  .gen-section { display: flex; flex-direction: column; gap: 0; }
+  .gen-row-wrap { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0; }
+  .gen-label-side {
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    padding: 0.5rem 0;
+    min-width: 18px;
+    flex-shrink: 0;
+  }
+  .gen-nodes { display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-start; flex: 1; padding: 1rem 0; border-top: 1px dashed var(--line); }
+  .tree-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    cursor: pointer;
+  }
+  .tree-box {
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 0.7rem 1rem;
+    text-align: center;
+    min-width: 130px;
+    max-width: 170px;
+    background: var(--cream);
+    transition: all 0.15s;
+    position: relative;
+  }
+  .tree-box:hover { border-color: var(--accent); background: var(--accent-pale); }
+  .tree-box.root-node { border: 2px solid var(--accent); background: var(--accent-pale); }
+  .tree-box .tname { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600; line-height: 1.2; }
+  .tree-box .tdates { font-size: 0.7rem; color: var(--ink-muted); margin-top: 3px; line-height: 1.4; }
+  .tree-box .tsex { font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px; color: var(--accent); }
+  .connector-v { width: 1px; height: 20px; background: var(--line); margin: 0 auto; }
+  .children-row { display: flex; gap: 1.5rem; justify-content: center; padding-top: 0; }
+  .child-branch { display: flex; flex-direction: column; align-items: center; }
+  .empty-tree {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 300px; color: var(--ink-muted); gap: 0.5rem;
+  }
+  .empty-tree .big { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center; padding: 3rem 1rem;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    color: var(--ink-muted);
+  }
+  .empty-state .big { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--ink); margin-bottom: 0.5rem; }
+
+  /* EXPORT PANEL */
+  .export-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .export-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .export-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600; }
+  .export-card p { font-size: 0.82rem; color: var(--ink-muted); line-height: 1.6; flex: 1; }
+
+  /* SECTION HEADING */
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem; }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; }
+
+  /* NOTICE */
+  .notice {
+    background: var(--accent-pale);
+    border: 1px solid #D4B86A;
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    font-size: 0.82rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  /* PRINT */
+  @media print {
+    .site-header, .tabs, .toolbar, .card-actions, .header-actions, .tree-toolbar { display: none !important; }
+    .content { padding: 0; }
+    .tree-wrap { border: none; min-height: unset; overflow: visible; }
+    body { background: white; }
+  }
+
+  @media (max-width: 640px) {
+    .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .export-cards { grid-template-columns: 1fr; }
+    .content { padding: 1rem; }
+    .tabs { padding: 0 0.5rem; }
+    .tab-btn { padding: 0.85rem 0.7rem; font-size: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <h1>Familienstammbaum</h1>
+    <p>Digitale Familienchronik</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn" style="background:transparent;border-color:rgba(255,255,255,0.2);color:var(--cream)" onclick="exportJSON()">&#128190; Backup</button>
+    <button class="btn gold" onclick="downloadPDF()">&#128462; PDF herunterladen</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="personen" onclick="switchTab('personen',this)">Personen</button>
+  <button class="tab-btn" data-tab="stammbaum" onclick="switchTab('stammbaum',this)">Stammbaum</button>
+  <button class="tab-btn" data-tab="export" onclick="switchTab('export',this)">Export & Import</button>
+</div>
+
+<div class="content">
+
+  <!-- PERSONEN -->
+  <div id="tab-personen" class="panel active">
+    <div class="stats-row" id="stats-row"></div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">&#128269;</span>
+        <input class="form-group input" type="text" id="search" placeholder="Person suchen..." oninput="renderList()" style="padding-left:2.2rem;border:1px solid var(--line);border-radius:4px;font-family:'DM Sans',sans-serif;font-size:0.9rem;color:var(--ink);outline:none;width:100%;padding-top:0.6rem;padding-bottom:0.6rem;padding-right:0.8rem">
+      </div>
+      <select id="filter-sex" onchange="renderList()" style="font-family:'DM Sans',sans-serif;font-size:0.82rem;padding:0.55rem 0.8rem;border:1px solid var(--line);border-radius:4px;background:var(--white);color:var(--ink-soft);outline:none">
+        <option value="">Alle</option>
+        <option value="m">Männlich</option>
+        <option value="f">Weiblich</option>
+        <option value="u">Unbekannt</option>
+      </select>
+      <button class="btn primary" onclick="openModal()">+ Person hinzufügen</button>
+    </div>
+    <div id="person-list"></div>
+  </div>
+
+  <!-- STAMMBAUM -->
+  <div id="tab-stammbaum" class="panel">
+    <div class="tree-toolbar">
+      <div class="form-group" style="flex-direction:row;align-items:center;gap:0.6rem;margin:0">
+        <label style="white-space:nowrap;font-size:0.75rem;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-muted)">Startperson:</label>
+        <select id="root-select" onchange="renderTree()" style="font-family:'DM Sans',sans-serif;font-size:0.9rem;padding:0.55rem 0.8rem;border:1px solid var(--line);border-radius:4px;background:var(--white);color:var(--ink);outline:none;min-width:200px">
+          <option value="">Bitte wählen…</option>
+        </select>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:0.5rem">
+        <button class="btn" onclick="switchTab('personen',document.querySelector('[data-tab=personen]'))">&#8592; Personen bearbeiten</button>
+        <button class="btn gold" onclick="downloadPDF()">&#128462; Als PDF speichern</button>
+      </div>
+    </div>
+    <div id="tree-container" class="tree-wrap">
+      <div class="empty-tree"><div class="big">Stammbaum</div><div>Wähle eine Startperson oben</div></div>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div id="tab-export" class="panel">
+    <div class="notice">Exportiere deine Daten als JSON-Backup oder teile den Stammbaum als druckfähige HTML-Datei mit der Familie.</div>
+    <div class="export-cards">
+      <div class="export-card">
+        <h3>&#128462; PDF herunterladen</h3>
+        <p>Erstellt eine druckfertige PDF-Datei des Stammbaums. Ideal zum Ausdrucken oder per E-Mail teilen. Wähle zuerst eine Startperson im Stammbaum-Tab.</p>
+        <button class="btn gold" onclick="downloadPDF()">PDF erstellen</button>
+      </div>
+      <div class="export-card">
+        <h3>&#128190; JSON Backup</h3>
+        <p>Speichert alle Personen und Verbindungen als JSON-Datei. Diese Datei kann jederzeit wieder importiert werden – auch in einer neuen Browser-Sitzung.</p>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button class="btn primary" onclick="exportJSON()">Exportieren</button>
+          <button class="btn" onclick="document.getElementById('import-input').click()">Importieren</button>
+          <input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(event)">
+        </div>
+      </div>
+      <div class="export-card">
+        <h3>&#128229; HTML-Datei teilen</h3>
+        <p>Erstellt eine vollständige HTML-Datei mit dem interaktiven Stammbaum — kann direkt im Browser geöffnet werden, ohne Internetverbindung.</p>
+        <button class="btn" onclick="exportHTML()">HTML exportieren</button>
+      </div>
+      <div class="export-card">
+        <h3>&#9998; Daten löschen</h3>
+        <p>Löscht alle erfassten Personen und setzt die Anwendung zurück. Vorher unbedingt ein Backup erstellen!</p>
+        <button class="btn danger-btn" onclick="clearAll()">Alle Daten löschen</button>
+      </div>
+    </div>
+    <div class="section-head"><span class="section-title">Statistik</span></div>
+    <div id="export-stats" style="font-size:0.85rem;color:var(--ink-muted)"></div>
+  </div>
+
+</div>
+
+<!-- MODAL PERSON -->
+<div id="modal-overlay" class="modal-overlay" onclick="closeModalBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Person hinzufügen</div>
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Vorname *</label><input id="f-vn" type="text" placeholder="z. B. Hans"></div>
+      <div class="form-group"><label>Nachname *</label><input id="f-nn" type="text" placeholder="z. B. Müller"></div>
+    </div>
+    <div class="form-grid-3">
+      <div class="form-group">
+        <label>Geschlecht</label>
+        <select id="f-sex">
+          <option value="u">Unbekannt</option>
+          <option value="m">Männlich</option>
+          <option value="f">Weiblich</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Geburtsdatum</label><input id="f-bd" type="date"></div>
+      <div class="form-group"><label>Sterbedatum</label><input id="f-dd" type="date"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Geburtsort</label><input id="f-bp" type="text" placeholder="z. B. Zürich"></div>
+      <div class="form-group"><label>Sterbeort</label><input id="f-dp" type="text" placeholder="z. B. Bern"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Heiratsdatum</label><input id="f-wd" type="date">
+      </div>
+      <div class="form-group">
+        <label>Beruf</label><input id="f-job" type="text" placeholder="z. B. Bauer">
+      </div>
+    </div>
+    <div class="form-group"><label>Vater</label><select id="f-fa"></select></div>
+    <div class="form-group"><label>Mutter</label><select id="f-mo"></select></div>
+    <div class="form-group"><label>Ehepartner/in</label><select id="f-sp"></select></div>
+    <div class="form-group"><label>Notizen</label><input id="f-notes" type="text" placeholder="Weitere Informationen…"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="savePerson()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+let persons = JSON.parse(localStorage.getItem('stammbaum_persons') || '[]');
+let editingId = null;
+
+function save() {
+  localStorage.setItem('stammbaum_persons', JSON.stringify(persons));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function fmt(d) {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  return `${day}.${m}.${y}`;
+}
+
+function initials(p) {
+  return ((p.vorname || '?')[0] + (p.nachname || '?')[0]).toUpperCase();
+}
+
+function getName(id) {
+  const p = persons.find(x => x.id === id);
+  return p ? `${p.vorname} ${p.nachname}` : '';
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'stammbaum') { populateRootSelect(); renderTree(); }
+  if (name === 'export') renderExportStats();
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const total = persons.length;
+  const male = persons.filter(p => p.sex === 'm').length;
+  const female = persons.filter(p => p.sex === 'f').length;
+  const families = new Set(persons.filter(p => p.spouse).map(p => [p.id, p.spouse].sort().join('-'))).size;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-lbl">Personen</div></div>
+    <div class="stat-card"><div class="stat-num">${male}</div><div class="stat-lbl">Männlich</div></div>
+    <div class="stat-card"><div class="stat-num">${female}</div><div class="stat-lbl">Weiblich</div></div>
+    <div class="stat-card"><div class="stat-num">${families}</div><div class="stat-lbl">Paare</div></div>`;
+}
+
+function renderExportStats() {
+  const el = document.getElementById('export-stats');
+  if (!persons.length) { el.textContent = 'Noch keine Personen erfasst.'; return; }
+  const oldest = persons.filter(p => p.birthdate).sort((a, b) => a.birthdate.localeCompare(b.birthdate))[0];
+  el.innerHTML = `${persons.length} Personen erfasst${oldest ? ` · Ältester Eintrag: ${oldest.vorname} ${oldest.nachname} (* ${fmt(oldest.birthdate)})` : ''}`;
+}
+
+// ── PERSON LIST ───────────────────────────────────────────────────────────────
+function renderList() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const sexFilter = document.getElementById('filter-sex').value;
+  let filtered = persons.filter(p => (p.vorname + ' ' + p.nachname).toLowerCase().includes(q));
+  if (sexFilter) filtered = filtered.filter(p => (p.sex || 'u') === sexFilter);
+  filtered.sort((a, b) => a.nachname.localeCompare(b.nachname));
+
+  const list = document.getElementById('person-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div class="big">Keine Personen gefunden</div><div>Füge Familienmitglieder über "+ Person hinzufügen" ein.</div></div>`;
+    renderStats(); return;
+  }
+  list.innerHTML = filtered.map(p => {
+    const dates = [p.birthdate ? '* ' + fmt(p.birthdate) : '', p.deathdate ? '† ' + fmt(p.deathdate) : ''].filter(Boolean).join('  ·  ');
+    const fa = p.father ? getName(p.father) : '';
+    const mo = p.mother ? getName(p.mother) : '';
+    const parents = [fa, mo].filter(Boolean).join(' & ');
+    return `<div class="person-card">
+      <div class="avatar ${p.sex || 'u'}">${initials(p)}</div>
+      <div class="person-info">
+        <div class="person-name">${p.vorname} ${p.nachname}${p.job ? ` <span style="font-weight:400;font-size:0.85rem;color:var(--ink-muted)">· ${p.job}</span>` : ''}</div>
+        <div class="person-dates">${dates}${parents ? `<span style="margin-left:8px;color:var(--ink-muted)">Eltern: ${parents}</span>` : ''}</div>
+      </div>
+      <div class="card-actions">
+        <button class="btn" onclick="openModal('${p.id}')">Bearbeiten</button>
+        <button class="btn danger-btn" onclick="deletePerson('${p.id}')">Löschen</button>
+      </div>
+    </div>`;
+  }).join('');
+  renderStats();
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function populateSelects(excludeId) {
+  const sorted = [...persons].sort((a, b) => a.nachname.localeCompare(b.nachname));
+  const opts = `<option value="">— keine/r —</option>` +
+    sorted.filter(p => p.id !== excludeId).map(p => `<option value="${p.id}">${p.vorname} ${p.nachname}</option>`).join('');
+  ['f-fa', 'f-mo', 'f-sp'].forEach(id => document.getElementById(id).innerHTML = opts);
+}
+
+function openModal(id) {
+  editingId = id || null;
+  document.getElementById('modal-title').textContent = id ? 'Person bearbeiten' : 'Person hinzufügen';
+  const p = id ? persons.find(x => x.id === id) : null;
+  document.getElementById('f-vn').value = p?.vorname || '';
+  document.getElementById('f-nn').value = p?.nachname || '';
+  document.getElementById('f-sex').value = p?.sex || 'u';
+  document.getElementById('f-bd').value = p?.birthdate || '';
+  document.getElementById('f-dd').value = p?.deathdate || '';
+  document.getElementById('f-bp').value = p?.birthplace || '';
+  document.getElementById('f-dp').value = p?.deathplace || '';
+  document.getElementById('f-wd').value = p?.weddingdate || '';
+  document.getElementById('f-job').value = p?.job || '';
+  document.getElementById('f-notes').value = p?.notes || '';
+  populateSelects(id);
+  document.getElementById('f-fa').value = p?.father || '';
+  document.getElementById('f-mo').value = p?.mother || '';
+  document.getElementById('f-sp').value = p?.spouse || '';
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('f-vn').focus();
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalBg(e) { if (e.target.id === 'modal-overlay') closeModal(); }
+
+function savePerson() {
+  const vn = document.getElementById('f-vn').value.trim();
+  const nn = document.getElementById('f-nn').value.trim();
+  if (!vn || !nn) { alert('Vor- und Nachname sind Pflichtfelder.'); return; }
+  const data = {
+    vorname: vn, nachname: nn,
+    sex: document.getElementById('f-sex').value,
+    birthdate: document.getElementById('f-bd').value,
+    deathdate: document.getElementById('f-dd').value,
+    birthplace: document.getElementById('f-bp').value.trim(),
+    deathplace: document.getElementById('f-dp').value.trim(),
+    weddingdate: document.getElementById('f-wd').value,
+    job: document.getElementById('f-job').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    father: document.getElementById('f-fa').value,
+    mother: document.getElementById('f-mo').value,
+    spouse: document.getElementById('f-sp').value,
+  };
+  if (editingId) {
+    const idx = persons.findIndex(p => p.id === editingId);
+    persons[idx] = { ...persons[idx], ...data };
+  } else {
+    persons.push({ id: uid(), ...data });
+  }
+  save(); closeModal(); renderList();
+}
+
+function deletePerson(id) {
+  if (!confirm('Diese Person wirklich löschen?')) return;
+  persons = persons.filter(p => p.id !== id);
+  persons.forEach(p => {
+    if (p.father === id) p.father = '';
+    if (p.mother === id) p.mother = '';
+    if (p.spouse === id) p.spouse = '';
+  });
+  save(); renderList();
+}
+
+// ── TREE ──────────────────────────────────────────────────────────────────────
+function populateRootSelect() {
+  const sel = document.getElementById('root-select');
+  const cur = sel.value;
+  const sorted = [...persons].sort((a, b) => a.nachname.localeCompare(b.nachname));
+  sel.innerHTML = `<option value="">Bitte wählen…</option>` +
+    sorted.map(p => `<option value="${p.id}">${p.vorname} ${p.nachname}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+function buildNodeHTML(p, isRoot) {
+  const dates = [
+    p.birthdate ? '* ' + fmt(p.birthdate) + (p.birthplace ? ` ${p.birthplace}` : '') : '',
+    p.deathdate ? '† ' + fmt(p.deathdate) + (p.deathplace ? ` ${p.deathplace}` : '') : '',
+  ].filter(Boolean).join('\n');
+  const sexLabel = p.sex === 'm' ? 'Männlich' : p.sex === 'f' ? 'Weiblich' : '';
+  return `<div class="tree-box${isRoot ? ' root-node' : ''}" onclick="openModal('${p.id}'); switchTab('personen', document.querySelector('[data-tab=personen]'))" title="${p.notes || ''}">
+    ${sexLabel ? `<div class="tsex">${sexLabel}</div>` : ''}
+    <div class="tname">${p.vorname}<br>${p.nachname}</div>
+    ${dates ? `<div class="tdates">${dates.replace(/\n/g, '<br>')}</div>` : ''}
+    ${p.job ? `<div class="tdates" style="margin-top:4px;font-style:italic">${p.job}</div>` : ''}
+  </div>`;
+}
+
+function renderTree() {
+  const rootId = document.getElementById('root-select').value;
+  const container = document.getElementById('tree-container');
+  if (!rootId) {
+    container.innerHTML = `<div class="empty-tree"><div class="big">Stammbaum</div><div>Wähle eine Startperson oben</div></div>`;
+    return;
+  }
+
+  // Build generations by BFS downward from root
+  const root = persons.find(p => p.id === rootId);
+  if (!root) return;
+
+  // Collect ancestors
+  function getAncestors(id, depth, visited = new Set()) {
+    if (!id || visited.has(id) || depth > 4) return [];
+    visited.add(id);
+    const p = persons.find(x => x.id === id);
+    if (!p) return [];
+    return [
+      ...getAncestors(p.father, depth + 1, visited),
+      ...getAncestors(p.mother, depth + 1, visited),
+      { ...p, _gen: -depth }
+    ];
+  }
+
+  // Collect descendants
+  function getDescendants(id, depth, visited = new Set()) {
+    if (!id || visited.has(id) || depth > 4) return [];
+    visited.add(id);
+    const p = persons.find(x => x.id === id);
+    if (!p) return [];
+    const children = persons.filter(x => x.father === id || x.mother === id);
+    return [
+      { ...p, _gen: depth },
+      ...children.flatMap(c => getDescendants(c.id, depth + 1, visited))
+    ];
+  }
+
+  const ancestors = getAncestors(rootId, 0);
+  const descendants = getDescendants(rootId, 0);
+  const all = [...ancestors, ...descendants.slice(1)]; // avoid duplicate root
+
+  // Group by generation
+  const genMap = {};
+  [...ancestors, ...descendants].forEach(p => {
+    if (!genMap[p._gen]) genMap[p._gen] = [];
+    if (!genMap[p._gen].find(x => x.id === p.id)) genMap[p._gen].push(p);
+  });
+
+  const gens = Object.keys(genMap).map(Number).sort((a, b) => a - b);
+
+  function genLabel(g) {
+    if (g === 0) return 'Sie/Er';
+    if (g === -1) return 'Eltern';
+    if (g === -2) return 'Großeltern';
+    if (g === -3) return 'Urgroßeltern';
+    if (g === 1) return 'Kinder';
+    if (g === 2) return 'Enkel';
+    if (g === 3) return 'Urenkel';
+    return `Gen ${g}`;
+  }
+
+  let html = '<div class="gen-section">';
+  gens.forEach(g => {
+    const nodes = genMap[g];
+    html += `<div class="gen-row-wrap">
+      <div class="gen-label-side">${genLabel(g)}</div>
+      <div class="gen-nodes">`;
+    nodes.forEach(p => {
+      html += `<div class="tree-node">${buildNodeHTML(p, p.id === rootId)}</div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += '</div>';
+  container.innerHTML = `<div class="tree-inner">${html}</div>`;
+}
+
+// ── PDF EXPORT ────────────────────────────────────────────────────────────────
+function downloadPDF() {
+  if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
+    alert('PDF-Bibliothek wird geladen. Bitte kurz warten und erneut versuchen.');
+    return;
+  }
+  const { jsPDF } = window.jspdf || window;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  const pageW = 297, pageH = 210, margin = 14;
+  let y = margin;
+
+  // Title
+  doc.setFont('times', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(28, 26, 23);
+  doc.text('Familienstammbaum', margin, y);
+  y += 8;
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(140, 136, 127);
+  doc.text(`Erstellt am ${new Date().toLocaleDateString('de-CH')} · ${persons.length} Personen`, margin, y);
+  y += 8;
+  doc.setDrawColor(212, 202, 187);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, pageW - margin, y);
+  y += 6;
+
+  // Sort by generation (ancestors first), then alphabetically
+  const sorted = [...persons].sort((a, b) => {
+    if (a.nachname !== b.nachname) return a.nachname.localeCompare(b.nachname);
+    return a.vorname.localeCompare(b.vorname);
+  });
+
+  // Table headers
+  const cols = [
+    { label: 'Name', x: margin, w: 55 },
+    { label: 'Geburtsdatum', x: margin + 55, w: 32 },
+    { label: 'Geburtsort', x: margin + 87, w: 30 },
+    { label: 'Sterbedatum', x: margin + 117, w: 30 },
+    { label: 'Sterbeort', x: margin + 147, w: 28 },
+    { label: 'Eltern', x: margin + 175, w: 60 },
+    { label: 'Beruf', x: margin + 235, w: 40 },
+  ];
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(139, 105, 20);
+  cols.forEach(c => doc.text(c.label.toUpperCase(), c.x, y));
+  y += 3;
+  doc.setDrawColor(212, 202, 187);
+  doc.line(margin, y, pageW - margin, y);
+  y += 4;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+
+  sorted.forEach((p, i) => {
+    if (y > pageH - 14) {
+      doc.addPage();
+      y = margin + 10;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(139, 105, 20);
+      cols.forEach(c => doc.text(c.label.toUpperCase(), c.x, y));
+      y += 3;
+      doc.setDrawColor(212, 202, 187);
+      doc.line(margin, y, pageW - margin, y);
+      y += 4;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+    }
+
+    if (i % 2 === 0) {
+      doc.setFillColor(250, 247, 242);
+      doc.rect(margin - 1, y - 3.5, pageW - margin * 2 + 2, 6, 'F');
+    }
+
+    doc.setTextColor(28, 26, 23);
+    const fa = p.father ? getName(p.father) : '';
+    const mo = p.mother ? getName(p.mother) : '';
+    const parents = [fa, mo].filter(Boolean).join(' & ');
+
+    function cell(text, col) {
+      const str = (text || '').toString();
+      doc.text(str.substring(0, Math.floor(col.w / 2.1)), col.x, y);
+    }
+
+    doc.setFont('helvetica', 'bold');
+    cell(`${p.nachname}, ${p.vorname}`, cols[0]);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(74, 70, 64);
+    cell(fmt(p.birthdate), cols[1]);
+    cell(p.birthplace, cols[2]);
+    cell(fmt(p.deathdate), cols[3]);
+    cell(p.deathplace, cols[4]);
+    cell(parents, cols[5]);
+    cell(p.job, cols[6]);
+
+    y += 6;
+  });
+
+  // Footer
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(140, 136, 127);
+    doc.text(`Seite ${i} / ${pages}`, pageW - margin, pageH - 6, { align: 'right' });
+    doc.text('Familienstammbaum', margin, pageH - 6);
+  }
+
+  doc.save(`Stammbaum_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+// ── JSON EXPORT / IMPORT ──────────────────────────────────────────────────────
+function exportJSON() {
+  const blob = new Blob([JSON.stringify({ version: 1, persons }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Stammbaum_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      const imported = data.persons || data;
+      if (!Array.isArray(imported)) throw new Error();
+      if (!confirm(`${imported.length} Personen importieren? Bestehende Daten werden ersetzt.`)) return;
+      persons = imported;
+      save(); renderList();
+      alert(`${imported.length} Personen erfolgreich importiert.`);
+    } catch {
+      alert('Ungültige JSON-Datei.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ── HTML EXPORT ───────────────────────────────────────────────────────────────
+function exportHTML() {
+  const data = JSON.stringify(persons);
+  const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Stammbaum</title>
+<style>body{font-family:Georgia,serif;max-width:900px;margin:2rem auto;padding:1rem}h1{font-size:2rem;margin-bottom:0.5rem}table{width:100%;border-collapse:collapse;margin-top:1rem}th{text-align:left;padding:6px 8px;border-bottom:2px solid #ccc;font-size:0.8rem;letter-spacing:0.05em;text-transform:uppercase}td{padding:6px 8px;border-bottom:1px solid #eee;font-size:0.9rem}tr:nth-child(even){background:#fafaf8}</style></head>
+<body><h1>Familienstammbaum</h1><p style="color:#888">Stand: ${new Date().toLocaleDateString('de-CH')}</p>
+<table><thead><tr><th>Name</th><th>Geburtsdatum</th><th>Sterbedatum</th><th>Eltern</th><th>Beruf</th></tr></thead><tbody id="tb"></tbody></table>
+<script>const ps=${data};function fmt(d){if(!d)return'';const[y,m,day]=d.split('-');return day+'.'+m+'.'+y}function gn(id){const p=ps.find(x=>x.id===id);return p?p.vorname+' '+p.nachname:''}const tb=document.getElementById('tb');[...ps].sort((a,b)=>a.nachname.localeCompare(b.nachname)).forEach(p=>{const fa=p.father?gn(p.father):'';const mo=p.mother?gn(p.mother):'';tb.innerHTML+='<tr><td><strong>'+p.nachname+'</strong>, '+p.vorname+'</td><td>'+(fmt(p.birthdate)||'—')+'</td><td>'+(fmt(p.deathdate)||'—')+'</td><td>'+[fa,mo].filter(Boolean).join(' & ')+'</td><td>'+(p.job||'')+'</td></tr>'});<\/script></body></html>`;
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Stammbaum_${new Date().toISOString().slice(0,10)}.html`;
+  a.click();
+}
+
+function clearAll() {
+  if (!confirm('Wirklich ALLE Daten löschen? Dies kann nicht rückgängig gemacht werden.')) return;
+  persons = [];
+  save(); renderList();
+  alert('Alle Daten gelöscht.');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderList();
+</script>
+</body>
+</html>
