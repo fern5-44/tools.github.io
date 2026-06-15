@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capo-Rechner — Gitarren-Akkorde vereinfachen</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --mahagoni: #2C1A0E;
+    --creme: #F5EFE6;
+    --creme-dark: #EAE0D0;
+    --gold: #C8861A;
+    --gold-light: #E8A838;
+    --text-on-dark: #F5EFE6;
+    --text-muted: #9C856E;
+    --fret-line: rgba(200,134,26,0.25);
+    --card-border: rgba(44,26,14,0.12);
+  }
+
+  body {
+    background: var(--creme);
+    color: var(--mahagoni);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header { background: var(--mahagoni); overflow: hidden; }
+  .neck { display: flex; align-items: stretch; min-height: 120px; }
+  .nut { width: 14px; background: var(--creme-dark); flex-shrink: 0; }
+  .fretboard { flex: 1; position: relative; display: flex; align-items: center; padding: 0 2rem; }
+  .frets { position: absolute; inset: 0; display: flex; }
+  .fret { flex: 1; border-right: 2px solid var(--fret-line); position: relative; }
+  .fret-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 10px; height: 10px; border-radius: 50%; background: rgba(200,134,26,0.18); }
+  .strings { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-evenly; padding: 16px 0; }
+  .string-line { height: 1px; background: linear-gradient(90deg, rgba(200,200,180,0.6), rgba(200,200,180,0.2)); }
+  .header-content { position: relative; z-index: 2; }
+  header h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 600; color: var(--text-on-dark); line-height: 1.15; }
+  header p { color: var(--text-muted); font-size: 0.875rem; margin-top: 5px; }
+
+  /* ── Main ── */
+  main { max-width: 700px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  .field-label {
+    font-size: 0.72rem; font-weight: 500;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 10px; display: block;
+  }
+
+  /* ── Capo Section ── */
+  .capo-section {
+    background: var(--mahagoni);
+    border-radius: 14px;
+    padding: 20px 24px 18px;
+    margin-bottom: 2rem;
+  }
+  .capo-section .field-label { color: rgba(245,239,230,0.5); margin-bottom: 12px; }
+  .capo-display { display: flex; align-items: baseline; gap: 7px; margin-bottom: 14px; }
+  .capo-num { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 600; color: var(--gold-light); line-height: 1; }
+  .capo-unit { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 5px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 3px; outline: none; display: block;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--gold); cursor: pointer;
+    border: 3px solid #2C1A0E;
+    box-shadow: 0 0 0 2px var(--gold-light);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--gold); cursor: pointer;
+    border: 3px solid #2C1A0E;
+  }
+  .fret-marks {
+    display: flex; justify-content: space-between;
+    padding: 6px 0 0; font-size: 0.7rem;
+    color: rgba(245,239,230,0.3);
+  }
+
+  /* ── Chord Grid ── */
+  .chords-section { margin-bottom: 1rem; }
+
+  .chord-grid-inputs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .chord-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .chord-slot input {
+    width: 100%;
+    height: 58px;
+    background: white;
+    border: 1.5px solid var(--card-border);
+    border-radius: 10px 10px 0 0;
+    border-bottom: none;
+    padding: 0 8px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--mahagoni);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .chord-slot input::placeholder {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #C8B8A2;
+    letter-spacing: 0;
+  }
+  .chord-slot input:focus {
+    border-color: var(--gold);
+    z-index: 1;
+  }
+
+  .chord-arrow-down {
+    width: 100%;
+    height: 28px;
+    background: var(--creme-dark);
+    border: 1.5px solid var(--card-border);
+    border-top: none;
+    border-radius: 0 0 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .chord-result-box {
+    width: 100%;
+    height: 58px;
+    background: white;
+    border: 1.5px solid var(--card-border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--mahagoni);
+    transition: color 0.15s;
+  }
+  .chord-result-box.simplified { color: var(--gold); }
+  .chord-result-box.empty { color: var(--creme-dark); }
+  .chord-result-box.invalid { font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 400; color: #C0AE9A; }
+
+  /* focus highlight syncs border on full column */
+  .chord-slot:focus-within input { border-color: var(--gold); }
+  .chord-slot:focus-within .chord-arrow-down { border-color: var(--gold); background: rgba(200,134,26,0.08); color: var(--gold); }
+  .chord-slot:focus-within .chord-result-box { border-color: var(--gold); }
+
+  /* ── Tipps ── */
+  .tips { margin-top: 2rem; border-top: 1px solid var(--creme-dark); padding-top: 1.75rem; }
+  .tips-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 600; color: var(--mahagoni); margin-bottom: 0.9rem; }
+  .tips-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .tip-card { background: white; border: 1.5px solid var(--card-border); border-radius: 10px; padding: 12px 14px; }
+  .tip-bund { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); font-weight: 500; margin-bottom: 4px; }
+  .tip-text { font-size: 0.78rem; color: #4A2E18; line-height: 1.5; }
+
+  footer { text-align: center; padding: 1.5rem; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--creme-dark); }
+
+  @media (max-width: 480px) {
+    .chord-grid-inputs { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="neck">
+    <div class="nut"></div>
+    <div class="fretboard">
+      <div class="frets">
+        <div class="fret"><div class="fret-dot"></div></div>
+        <div class="fret"></div>
+        <div class="fret"><div class="fret-dot"></div></div>
+        <div class="fret"></div>
+        <div class="fret"><div class="fret-dot"></div></div>
+        <div class="fret"></div>
+        <div class="fret"><div class="fret-dot"></div></div>
+        <div class="fret"></div>
+      </div>
+      <div class="strings">
+        <div class="string-line"></div>
+        <div class="string-line"></div>
+        <div class="string-line"></div>
+        <div class="string-line"></div>
+        <div class="string-line"></div>
+        <div class="string-line"></div>
+      </div>
+      <div class="header-content">
+        <h1>Capo-Rechner</h1>
+        <p>Schwierige Akkorde einfach spielen — mit Kapodaster</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Capo oben -->
+  <div class="capo-section">
+    <span class="field-label">Capo-Position</span>
+    <div class="capo-display">
+      <span class="capo-num" id="capoNum">1</span>
+      <span class="capo-unit">Bund</span>
+    </div>
+    <input type="range" id="capoSlider" min="1" max="7" value="1" step="1" aria-label="Capo-Bund wählen">
+    <div class="fret-marks">
+      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+    </div>
+  </div>
+
+  <!-- 8 Akkord-Slots -->
+  <div class="chords-section">
+    <span class="field-label">Deine Akkorde</span>
+    <div class="chord-grid-inputs" id="chordGrid"></div>
+  </div>
+
+</main>
+
+<footer>Capo-Rechner · Alle Berechnungen lokal im Browser · Keine Daten werden gespeichert</footer>
+
+<script>
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLAT_MAP = {'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B'};
+
+function canonicalize(root) {
+  if (NOTES.includes(root)) return root;
+  return FLAT_MAP[root] || null;
+}
+function parseChord(str) {
+  str = str.trim();
+  if (!str) return null;
+  const m = str.match(/^([A-G][#b]?)(.*)/);
+  if (!m) return null;
+  const canonical = canonicalize(m[1]);
+  if (!canonical) return null;
+  return { root: canonical, quality: m[2] };
+}
+function transposeDown(root, semitones) {
+  return NOTES[(NOTES.indexOf(root) - semitones + 12) % 12];
+}
+const SIMPLE_ROOTS = new Set(['C','D','E','G','A']);
+function isSimple(root, quality) {
+  return SIMPLE_ROOTS.has(root) && ['','m','7','m7','maj7'].includes(quality);
+}
+
+// Build 8 slots
+const grid = document.getElementById('chordGrid');
+const inputs = [];
+const resultBoxes = [];
+
+for (let i = 0; i < 8; i++) {
+  const slot = document.createElement('div');
+  slot.className = 'chord-slot';
+
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.placeholder = 'Akkord';
+  inp.autocomplete = 'off';
+  inp.spellcheck = false;
+  inp.setAttribute('aria-label', 'Akkord ' + (i+1));
+
+  const arrow = document.createElement('div');
+  arrow.className = 'chord-arrow-down';
+  arrow.textContent = '↓';
+
+  const res = document.createElement('div');
+  res.className = 'chord-result-box empty';
+  res.textContent = '—';
+
+  slot.appendChild(inp);
+  slot.appendChild(arrow);
+  slot.appendChild(res);
+  grid.appendChild(slot);
+
+  inputs.push(inp);
+  resultBoxes.push(res);
+
+  inp.addEventListener('input', updateAll);
+}
+
+function updateAll() {
+  const capo = parseInt(document.getElementById('capoSlider').value);
+  inputs.forEach((inp, i) => {
+    const res = resultBoxes[i];
+    const raw = inp.value.trim();
+    if (!raw) {
+      res.textContent = '—';
+      res.className = 'chord-result-box empty';
+      return;
+    }
+    const parsed = parseChord(raw);
+    if (!parsed) {
+      res.textContent = '?';
+      res.className = 'chord-result-box invalid';
+      return;
+    }
+    const newRoot = transposeDown(parsed.root, capo);
+    const newChord = newRoot + parsed.quality;
+    res.textContent = newChord;
+    res.className = 'chord-result-box' + (isSimple(newRoot, parsed.quality) ? ' simplified' : '');
+  });
+}
+
+document.getElementById('capoSlider').addEventListener('input', function() {
+  document.getElementById('capoNum').textContent = this.value;
+  updateAll();
+});
+</script>
+</body>
+</html>
