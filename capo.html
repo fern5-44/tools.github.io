@@ -88,6 +88,22 @@
 
   /* ── Chord Grid ── */
   .chords-section { margin-bottom: 1rem; }
+  .chords-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+
+  .clear-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem; font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--gold);
+    background: transparent;
+    border: 1.5px solid rgba(200,134,26,0.4);
+    border-radius: 20px;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
+  }
+  .clear-btn:hover:not(:disabled) { background: var(--gold); color: var(--creme); border-color: var(--gold); }
+  .clear-btn:disabled { opacity: 0.35; cursor: default; }
 
   .chord-grid-inputs {
     display: grid;
@@ -315,7 +331,10 @@
 
   <!-- 8 Akkord-Slots -->
   <div class="chords-section">
-    <span class="field-label">Deine Akkorde</span>
+    <div class="chords-head">
+      <span class="field-label" style="margin-bottom:0;">Deine Akkorde</span>
+      <button type="button" id="clearAll" class="clear-btn" disabled>Alle löschen</button>
+    </div>
     <div class="chord-grid-inputs" id="chordGrid"></div>
   </div>
 
@@ -649,11 +668,18 @@ function updateAll() {
     renderGriff(griff, newRoot, parsed.quality);
   });
   renderCircle(capo);
+  document.getElementById('clearAll').disabled = inputs.every(i => !i.value.trim());
 }
 
 document.getElementById('capoSlider').addEventListener('input', function() {
   document.getElementById('capoNum').textContent = this.value;
   updateAll();
+});
+
+document.getElementById('clearAll').addEventListener('click', function() {
+  inputs.forEach(inp => { inp.value = ''; });
+  updateAll();
+  inputs[0].focus();
 });
 
 buildCircle();
