@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -172,18 +171,81 @@
   .chord-slot:focus-within .chord-arrow-down { border-color: var(--gold); background: rgba(200,134,26,0.08); color: var(--gold); }
   .chord-slot:focus-within .chord-result-box { border-color: var(--gold); }
 
-  /* ── Tipps ── */
-  .tips { margin-top: 2rem; border-top: 1px solid var(--creme-dark); padding-top: 1.75rem; }
-  .tips-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 600; color: var(--mahagoni); margin-bottom: 0.9rem; }
-  .tips-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-  .tip-card { background: white; border: 1.5px solid var(--card-border); border-radius: 10px; padding: 12px 14px; }
-  .tip-bund { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); font-weight: 500; margin-bottom: 4px; }
-  .tip-text { font-size: 0.78rem; color: #4A2E18; line-height: 1.5; }
+  /* ── Block headings (shared by lower sections) ── */
+  .block { margin-top: 2.5rem; }
+  .block-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 600; color: var(--mahagoni); }
+  .block-sub { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; margin-bottom: 1rem; line-height: 1.5; }
+
+  /* ── Notation H/B ── */
+  .notation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .note-map {
+    background: white;
+    border: 1.5px solid var(--card-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .note-de {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-weight: 600;
+    color: var(--mahagoni);
+    width: 34px; text-align: center; flex-shrink: 0;
+  }
+  .note-map .map-arrow { color: var(--gold); font-size: 1.1rem; flex-shrink: 0; }
+  .note-en {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem; font-weight: 600;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .note-cap {
+    font-size: 0.68rem; color: var(--text-muted);
+    line-height: 1.35; margin-left: auto; text-align: right;
+  }
+  .notation-note {
+    margin-top: 10px;
+    background: rgba(200,134,26,0.08);
+    border: 1px solid rgba(200,134,26,0.25);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 0.78rem;
+    color: #4A2E18;
+    line-height: 1.5;
+  }
+  .notation-note strong { color: var(--gold); font-weight: 600; }
+
+  /* ── Circle ── */
+  .circle-section {
+    background: var(--mahagoni);
+    border-radius: 14px;
+    padding: 22px 18px 18px;
+    text-align: center;
+  }
+  .circle-section .block-title { color: var(--text-on-dark); }
+  .circle-section .block-sub { color: rgba(245,239,230,0.55); margin-bottom: 0.4rem; }
+  .circle-wrap { display: flex; justify-content: center; }
+  svg.chord-circle { width: 100%; max-width: 360px; height: auto; display: block; }
+  .circle-legend {
+    margin-top: 6px;
+    font-size: 0.72rem;
+    color: rgba(245,239,230,0.6);
+    line-height: 1.6;
+  }
+  .circle-legend .dot-in { color: var(--gold-light); font-weight: 600; }
+  .circle-legend .dot-out { color: #E8A838; }
 
   footer { text-align: center; padding: 1.5rem; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--creme-dark); }
 
   @media (max-width: 480px) {
     .chord-grid-inputs { grid-template-columns: repeat(2, 1fr); }
+    .notation-grid { grid-template-columns: 1fr; }
+    .note-cap { display: none; }
   }
 </style>
 </head>
@@ -240,6 +302,44 @@
     <div class="chord-grid-inputs" id="chordGrid"></div>
   </div>
 
+  <!-- ── NEU 1: Notenbezeichnung H / B ── -->
+  <section class="block">
+    <h2 class="block-title">Notenbezeichnung: H und B</h2>
+    <p class="block-sub">This website uses the english spelling. Here's how to translate the German names:</p>
+    <div class="notation-grid">
+      <div class="note-map">
+        <span class="note-de">H</span>
+        <span class="map-arrow">→</span>
+        <span class="note-en">B</span>
+        <span class="note-cap">deutsches H<br>= englisches B</span>
+      </div>
+      <div class="note-map">
+        <span class="note-de">B</span>
+        <span class="map-arrow">→</span>
+        <span class="note-en">B♭</span>
+        <span class="note-cap">deutsches B<br>= englisches B♭</span>
+      </div>
+    </div>
+    <p class="notation-note">
+      Kurz: das deutsche <strong>H</strong> tippst du als <strong>B</strong> ein, das deutsche <strong>B</strong> als <strong>Bb</strong>.
+      Hier kann auch ein <strong>H</strong> eingegeben werden — das wird automatisch als B erkannt.
+    </p>
+  </section>
+
+  <!-- ── NEU 2: Akkord-Kreis ── -->
+  <section class="block">
+    <div class="circle-section">
+      <h2 class="block-title">Akkord-Kreis</h2>
+      <p class="block-sub">So wird oben gerechnet: jeder Capo-Bund dreht den Akkord um einen Halbton nach unten.</p>
+      <div class="circle-wrap">
+        <svg class="chord-circle" id="chordCircle" viewBox="0 0 340 340" role="img" aria-label="Chromatischer Akkord-Kreis"></svg>
+      </div>
+      <p class="circle-legend">
+        <span class="dot-in">●</span> Lied-Akkord (klingend) &nbsp;→&nbsp; Pfeil dreht um die Capo-Bünde &nbsp;→&nbsp; <span class="dot-out">gegriffener Akkord</span>
+      </p>
+    </div>
+  </section>
+
 </main>
 
 <footer>Capo-Rechner · Alle Berechnungen lokal im Browser · Keine Daten werden gespeichert</footer>
@@ -255,9 +355,13 @@ function canonicalize(root) {
 function parseChord(str) {
   str = str.trim();
   if (!str) return null;
-  const m = str.match(/^([A-G][#b]?)(.*)/);
+  // deutsches H / h zulassen → englisches B
+  const m = str.match(/^([A-Ha-h][#b]?)(.*)/);
   if (!m) return null;
-  const canonical = canonicalize(m[1]);
+  let letter = m[1][0].toUpperCase();
+  let acc = m[1].slice(1);
+  if (letter === 'H') { letter = 'B'; acc = ''; } // H = B (natürlich)
+  const canonical = canonicalize(letter + acc);
   if (!canonical) return null;
   return { root: canonical, quality: m[2] };
 }
@@ -268,6 +372,7 @@ const SIMPLE_ROOTS = new Set(['C','D','E','G','A']);
 function isSimple(root, quality) {
   return SIMPLE_ROOTS.has(root) && ['','m','7','m7','maj7'].includes(quality);
 }
+function noteColor(i) { return 'hsl(' + (i * 30) + ', 62%, 52%)'; }
 
 // Build 8 slots
 const grid = document.getElementById('chordGrid');
@@ -304,6 +409,115 @@ for (let i = 0; i < 8; i++) {
   inp.addEventListener('input', updateAll);
 }
 
+/* ── Akkord-Kreis ── */
+const SVGNS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('chordCircle');
+const CX = 170, CY = 170;
+const DOT_R = 122;   // Notenpunkte-Ring
+const LABEL_R = 150; // Beschriftung
+const ARC_R = 86;    // innere Verbindungsbahn
+
+function pt(i, r) {
+  const a = (i * 30 - 90) * Math.PI / 180;
+  return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+}
+function el(name, attrs) {
+  const e = document.createElementNS(SVGNS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+let arcLayer;
+function buildCircle() {
+  // statischer Ring: 12 farbige Notenpunkte + Labels
+  const ring = el('g', {});
+  for (let i = 0; i < 12; i++) {
+    const [dx, dy] = pt(i, DOT_R);
+    ring.appendChild(el('circle', { cx: dx, cy: dy, r: 10, fill: noteColor(i), opacity: 0.92 }));
+    const [lx, ly] = pt(i, LABEL_R);
+    const t = el('text', {
+      x: lx, y: ly, fill: '#F5EFE6',
+      'font-family': "'Inter', sans-serif", 'font-size': 13, 'font-weight': 500,
+      'text-anchor': 'middle', 'dominant-baseline': 'central'
+    });
+    t.textContent = NOTES[i];
+    ring.appendChild(t);
+  }
+  svg.appendChild(ring);
+
+  // dynamische Pfeil-Ebene (wird bei jeder Eingabe neu gezeichnet)
+  arcLayer = el('g', { id: 'arcLayer' });
+  svg.appendChild(arcLayer);
+
+  // Zentrum-Text
+  const c1 = el('text', { id: 'cCapo', x: CX, y: CY - 8, fill: '#E8A838',
+    'font-family': "'Playfair Display', serif", 'font-size': 26, 'font-weight': 600,
+    'text-anchor': 'middle', 'dominant-baseline': 'central' });
+  const c2 = el('text', { id: 'cSub', x: CX, y: CY + 18, fill: 'rgba(245,239,230,0.6)',
+    'font-family': "'Inter', sans-serif", 'font-size': 11.5,
+    'text-anchor': 'middle', 'dominant-baseline': 'central' });
+  svg.appendChild(c1);
+  svg.appendChild(c2);
+}
+
+function drawArc(soundIdx, capo, color, opacity) {
+  // glatte Bahn von Lied-Note (soundIdx) Halbton für Halbton nach unten
+  const steps = capo * 3;
+  let d = '';
+  const pts = [];
+  for (let s = 0; s <= steps; s++) {
+    const idx = soundIdx - (capo * s / steps);
+    pts.push(pt(idx, ARC_R));
+  }
+  pts.forEach((p, k) => { d += (k === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' '; });
+  arcLayer.appendChild(el('path', { d: d.trim(), fill: 'none', stroke: color,
+    'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: opacity }));
+
+  // Markierung an der Lied-Note (Start, gefüllt + weißer Ring)
+  const [sx, sy] = pt(soundIdx, DOT_R);
+  arcLayer.appendChild(el('circle', { cx: sx, cy: sy, r: 12, fill: color,
+    stroke: '#F5EFE6', 'stroke-width': 2, opacity: opacity }));
+
+  // Pfeilspitze am gegriffenen Akkord (Ende)
+  const last = pts[pts.length - 1];
+  const prev = pts[pts.length - 2];
+  const ang = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
+  const L = 11, W = 6;
+  const tipx = last[0], tipy = last[1];
+  const bx = tipx - L * Math.cos(ang), by = tipy - L * Math.sin(ang);
+  const px = -Math.sin(ang), py = Math.cos(ang);
+  const a1 = [bx + W * px, by + W * py];
+  const a2 = [bx - W * px, by - W * py];
+  arcLayer.appendChild(el('polygon', {
+    points: tipx.toFixed(1)+','+tipy.toFixed(1)+' '+a1[0].toFixed(1)+','+a1[1].toFixed(1)+' '+a2[0].toFixed(1)+','+a2[1].toFixed(1),
+    fill: color, opacity: opacity
+  }));
+}
+
+function renderCircle(capo) {
+  while (arcLayer.firstChild) arcLayer.removeChild(arcLayer.firstChild);
+
+  const used = new Set();
+  inputs.forEach(inp => {
+    const parsed = parseChord(inp.value);
+    if (parsed) used.add(parsed.root);
+  });
+
+  // Zentrum
+  document.getElementById('cCapo').textContent = 'Capo ' + capo;
+  document.getElementById('cSub').textContent = '↓ ' + capo + ' Halbton' + (capo > 1 ? 'töne' : '');
+
+  if (used.size === 0) {
+    // Beispiel-Pfeil (gedimmt), damit der Kreis auch leer verständlich ist
+    drawArc(NOTES.indexOf('A'), capo, '#E8A838', 0.28);
+    return;
+  }
+  used.forEach(root => {
+    const i = NOTES.indexOf(root);
+    drawArc(i, capo, noteColor(i), 0.95);
+  });
+}
+
 function updateAll() {
   const capo = parseInt(document.getElementById('capoSlider').value);
   inputs.forEach((inp, i) => {
@@ -325,12 +539,16 @@ function updateAll() {
     res.textContent = newChord;
     res.className = 'chord-result-box' + (isSimple(newRoot, parsed.quality) ? ' simplified' : '');
   });
+  renderCircle(capo);
 }
 
 document.getElementById('capoSlider').addEventListener('input', function() {
   document.getElementById('capoNum').textContent = this.value;
   updateAll();
 });
+
+buildCircle();
+updateAll();
 </script>
 </body>
 </html>
