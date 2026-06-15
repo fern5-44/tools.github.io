@@ -152,7 +152,7 @@
     background: white;
     border: 1.5px solid var(--card-border);
     border-top: none;
-    border-radius: 0 0 10px 10px;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -166,10 +166,27 @@
   .chord-result-box.empty { color: var(--creme-dark); }
   .chord-result-box.invalid { font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 400; color: #C0AE9A; }
 
+  /* ── Griffbild unter dem Ergebnis ── */
+  .chord-griff {
+    width: 100%;
+    background: white;
+    border: 1.5px solid var(--card-border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 8px 0 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+  }
+  .chord-griff svg { display: block; }
+  .chord-griff .no-griff { color: var(--creme-dark); font-size: 1rem; line-height: 1; }
+
   /* focus highlight syncs border on full column */
   .chord-slot:focus-within input { border-color: var(--gold); }
   .chord-slot:focus-within .chord-arrow-down { border-color: var(--gold); background: rgba(200,134,26,0.08); color: var(--gold); }
   .chord-slot:focus-within .chord-result-box { border-color: var(--gold); }
+  .chord-slot:focus-within .chord-griff { border-color: var(--gold); }
 
   /* ── Block headings (shared by lower sections) ── */
   .block { margin-top: 2.5rem; }
@@ -305,7 +322,7 @@
   <!-- ── NEU 1: Notenbezeichnung H / B ── -->
   <section class="block">
     <h2 class="block-title">Notenbezeichnung: H und B</h2>
-    <p class="block-sub">This website uses the english spelling. Here's how to translate the German names:</p>
+    <p class="block-sub">Diese App rechnet mit der englischen Schreibweise. So übersetzt du die deutschen Namen:</p>
     <div class="notation-grid">
       <div class="note-map">
         <span class="note-de">H</span>
@@ -322,7 +339,7 @@
     </div>
     <p class="notation-note">
       Kurz: das deutsche <strong>H</strong> tippst du als <strong>B</strong> ein, das deutsche <strong>B</strong> als <strong>Bb</strong>.
-      Hier kann auch ein <strong>H</strong> eingegeben werden — das wird automatisch als B erkannt.
+      Du darfst auch direkt <strong>H</strong> eingeben — das wird automatisch als B erkannt.
     </p>
   </section>
 
@@ -374,10 +391,92 @@ function isSimple(root, quality) {
 }
 function noteColor(i) { return 'hsl(' + (i * 30) + ', 62%, 52%)'; }
 
+/* ── Griffe ──
+   Reihenfolge tiefe E-Saite → hohe e-Saite. 'x' = nicht spielen, 0 = leer, n = Bund.
+   Schöne offene Standardgriffe haben Vorrang; alles andere wird als Barré (E- oder
+   A-Form) an der passenden Bundposition berechnet, damit JEDER Akkord ein Griffbild hat. */
+const OPEN = {
+  'C':['x',3,2,0,1,0], 'D':['x','x',0,2,3,2], 'E':[0,2,2,1,0,0],
+  'G':[3,2,0,0,0,3], 'A':['x',0,2,2,2,0],
+  'Am':['x',0,2,2,1,0], 'Dm':['x','x',0,2,3,1], 'Em':[0,2,2,0,0,0],
+  'A7':['x',0,2,0,2,0], 'B7':['x',2,1,2,0,2], 'C7':['x',3,2,3,1,0],
+  'D7':['x','x',0,2,1,2], 'E7':[0,2,0,1,0,0], 'G7':[3,2,0,0,0,1],
+  'Am7':['x',0,2,0,1,0], 'Dm7':['x','x',0,2,1,1], 'Em7':[0,2,0,0,0,0],
+  'Cmaj7':['x',3,2,0,0,0], 'Dmaj7':['x','x',0,2,2,2], 'Emaj7':[0,2,1,1,0,0],
+  'Fmaj7':['x','x',3,2,1,0], 'Gmaj7':[3,2,0,0,0,2], 'Amaj7':['x',0,2,1,2,0]
+};
+// bewegliche Barré-Formen (Grundton auf tiefer E- bzw. A-Saite), als Offset ab Barré-Bund
+const ESHAPE = { '':[0,2,2,1,0,0], 'm':[0,2,2,0,0,0], '7':[0,2,0,1,0,0], 'm7':[0,2,0,0,0,0], 'maj7':[0,2,1,1,0,0] };
+const ASHAPE = { '':['x',0,2,2,2,0], 'm':['x',0,2,2,1,0], '7':['x',0,2,0,2,0], 'm7':['x',0,2,0,1,0], 'maj7':['x',0,2,1,2,0] };
+
+function shiftShape(t, n) { return t.map(v => v === 'x' ? 'x' : v + n); }
+
+function getShape(root, quality) {
+  if (!root) return null;
+  const name = root + quality;
+  if (OPEN[name]) return { frets: OPEN[name], barre: null };
+  if (!(quality in ESHAPE)) return null;   // exotische Akkordtypen: kein Standardgriff
+  const R = NOTES.indexOf(root);
+  if (R < 0) return null;
+  const bE = ((R - 4) % 12 + 12) % 12; // Grundton auf tiefer E-Saite
+  const bA = ((R - 9) % 12 + 12) % 12; // Grundton auf A-Saite
+  const cands = [];
+  if (bE >= 1) cands.push({ shape: shiftShape(ESHAPE[quality], bE), fret: bE, from: 0, to: 5 });
+  if (bA >= 1) cands.push({ shape: shiftShape(ASHAPE[quality], bA), fret: bA, from: 1, to: 5 });
+  if (!cands.length) return null;
+  cands.sort((a, b) => a.fret - b.fret); // möglichst tief am Hals
+  const c = cands[0];
+  return { frets: c.shape, barre: { fret: c.fret, from: c.from, to: c.to } };
+}
+
+function griffSVG(shape) {
+  const frets = shape.frets, barre = shape.barre;
+  const W = 66, H = 82, left = 12, right = 9, fretH = 13, nFrets = 4;
+  const span = W - left - right;
+  const sx = i => left + (span / 5) * i;
+  const nums = frets.filter(v => typeof v === 'number' && v > 0);
+  let baseFret = 1, drawNut = true;
+  if (nums.length) {
+    const maxF = Math.max.apply(null, nums), minF = Math.min.apply(null, nums);
+    if (maxF > 4) { baseFret = minF; drawNut = false; }
+  }
+  const topY = 16, bottom = topY + nFrets * fretH;
+  const rowY = row => topY + (row - 0.5) * fretH;
+  let s = '';
+  s += '<line x1="' + left + '" y1="' + topY + '" x2="' + (W - right) + '" y2="' + topY + '" stroke="#2C1A0E" stroke-width="' + (drawNut ? 3 : 1) + '"/>';
+  for (let f = 1; f <= nFrets; f++) { const y = topY + f * fretH; s += '<line x1="' + left + '" y1="' + y + '" x2="' + (W - right) + '" y2="' + y + '" stroke="rgba(44,26,14,0.22)" stroke-width="1"/>'; }
+  for (let i = 0; i < 6; i++) { const x = sx(i); s += '<line x1="' + x + '" y1="' + topY + '" x2="' + x + '" y2="' + bottom + '" stroke="rgba(44,26,14,0.32)" stroke-width="1"/>'; }
+  if (!drawNut) { s += '<text x="4" y="' + rowY(1) + '" fill="#9C856E" font-family="\'Inter\',sans-serif" font-size="9" text-anchor="middle" dominant-baseline="central">' + baseFret + '</text>'; }
+  if (barre) {
+    const y = rowY(barre.fret - baseFret + 1), x1 = sx(barre.from), x2 = sx(barre.to);
+    s += '<rect x="' + (x1 - 4.5).toFixed(1) + '" y="' + (y - 4.5).toFixed(1) + '" width="' + (x2 - x1 + 9).toFixed(1) + '" height="9" rx="4.5" fill="#2C1A0E"/>';
+  }
+  for (let i = 0; i < 6; i++) {
+    const x = sx(i), v = frets[i];
+    if (v === 'x') {
+      const y = topY - 7;
+      s += '<path d="M' + (x - 3) + ' ' + (y - 3) + ' L' + (x + 3) + ' ' + (y + 3) + ' M' + (x - 3) + ' ' + (y + 3) + ' L' + (x + 3) + ' ' + (y - 3) + '" stroke="#B7A48E" stroke-width="1.4" stroke-linecap="round"/>';
+    } else if (v === 0) {
+      s += '<circle cx="' + x + '" cy="' + (topY - 7) + '" r="3" fill="none" stroke="#B7A48E" stroke-width="1.4"/>';
+    } else {
+      if (barre && v === barre.fret && i >= barre.from && i <= barre.to) continue;
+      const y = rowY(v - baseFret + 1);
+      s += '<circle cx="' + x + '" cy="' + y.toFixed(1) + '" r="4.3" fill="#2C1A0E"/>';
+    }
+  }
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" aria-hidden="true">' + s + '</svg>';
+}
+
+function renderGriff(box, root, quality) {
+  const shape = getShape(root, quality);
+  box.innerHTML = shape ? griffSVG(shape) : '<span class="no-griff">·</span>';
+}
+
 // Build 8 slots
 const grid = document.getElementById('chordGrid');
 const inputs = [];
 const resultBoxes = [];
+const griffBoxes = [];
 
 for (let i = 0; i < 8; i++) {
   const slot = document.createElement('div');
@@ -398,13 +497,19 @@ for (let i = 0; i < 8; i++) {
   res.className = 'chord-result-box empty';
   res.textContent = '—';
 
+  const griff = document.createElement('div');
+  griff.className = 'chord-griff';
+  griff.innerHTML = '<span class="no-griff">·</span>';
+
   slot.appendChild(inp);
   slot.appendChild(arrow);
   slot.appendChild(res);
+  slot.appendChild(griff);
   grid.appendChild(slot);
 
   inputs.push(inp);
   resultBoxes.push(res);
+  griffBoxes.push(griff);
 
   inp.addEventListener('input', updateAll);
 }
@@ -522,22 +627,26 @@ function updateAll() {
   const capo = parseInt(document.getElementById('capoSlider').value);
   inputs.forEach((inp, i) => {
     const res = resultBoxes[i];
+    const griff = griffBoxes[i];
     const raw = inp.value.trim();
     if (!raw) {
       res.textContent = '—';
       res.className = 'chord-result-box empty';
+      renderGriff(griff, null);
       return;
     }
     const parsed = parseChord(raw);
     if (!parsed) {
       res.textContent = '?';
       res.className = 'chord-result-box invalid';
+      renderGriff(griff, null);
       return;
     }
     const newRoot = transposeDown(parsed.root, capo);
     const newChord = newRoot + parsed.quality;
     res.textContent = newChord;
     res.className = 'chord-result-box' + (isSimple(newRoot, parsed.quality) ? ' simplified' : '');
+    renderGriff(griff, newRoot, parsed.quality);
   });
   renderCircle(capo);
 }
