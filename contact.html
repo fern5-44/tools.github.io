@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contact — tools/</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=VT323&family=IBM+Plex+Mono:wght@300;400&family=IBM+Plex+Sans:wght@300;400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeNav()"></div>
+
+<div class="sidenav" id="sidenav">
+  <button class="closebtn" onclick="closeNav()">[ X ]</button>
+  <div class="sidenav-label">Pages</div>
+  <a href="index.html">Home</a>
+  <a href="tools/index.html">Tools</a>
+  <a href="contact.html">Contact</a>
+  <div class="sidenav-label">Tools</div>
+  <a href="tools/ics-generator.html">ICS Generator</a>
+</div>
+
+<nav class="topnav">
+  <ul class="topnav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="tools/index.html">Tools</a></li>
+    <li><a href="contact.html" class="active">Contact</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" onclick="toggleNav()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="page-wrap">
+  <div class="page-inner">
+
+    <h1 class="page-title anim-1">CONTACT</h1>
+    <p class="page-sub anim-2">Have an idea for a new tool? I'd love to hear it.</p>
+
+    <div class="contact-grid anim-3">
+
+      <div class="about-card">
+        <div class="about-initial">F</div>
+        <div class="about-name">FERN</div>
+        <div class="about-bio">
+          I build small browser tools in my spare time —
+          no frameworks, no fuss.
+          Everything on this site runs entirely in your browser
+          and sends zero data anywhere.
+          When I'm not coding, I'm probably outside.
+        </div>
+        <a href="https://github.com/fern5-44" class="btn-outline" target="_blank">GITHUB ↗</a>
+      </div>
+
+      <div class="form-card">
+        <div class="form-card-title">REQUEST A TOOL</div>
+        <div id="contactForm">
+          <div class="form-group">
+            <label class="form-label">Your name</label>
+            <input type="text" placeholder="Jane Doe"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email (optional)</label>
+            <input type="email" placeholder="jane@example.com"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select>
+              <option>Tool request</option>
+              <option>Bug report</option>
+              <option>General feedback</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Describe the tool you need</label>
+            <textarea placeholder="e.g. A tool that converts CSV to JSON..."></textarea>
+          </div>
+          <button class="btn-pink" style="width:100%; justify-content:center;" onclick="submitForm()">
+            SEND REQUEST →
+          </button>
+        </div>
+        <div class="success-msg" id="successMsg">[ REQUEST RECEIVED — THANKS ]</div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <span class="footer-left">tools/</span>
+    <span class="footer-right">runs in your browser · zero data collected</span>
+  </footer>
+</div>
+
+<script src="nav.js"></script>
+<script>
+  function submitForm() {
+    document.getElementById('contactForm').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'block';
+  }
+</script>
+</body>
+</html>
