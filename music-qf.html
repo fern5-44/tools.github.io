@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Querflöten-Transponier — Noten einfach umschreiben</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #F0F2F5;
+  --bg-dark:   #E4E8EE;
+  --panel:     #FFFFFF;
+  --header-bg: #3A4255;
+  --header-mid:#4A5368;
+  --silver:    #8A95A8;
+  --silver-lt: #B0B8C8;
+  --silver-gl: rgba(138,149,168,0.13);
+  --accent:    #7A8FA8;
+  --accent-lt: #A0B4C8;
+  --ink:       #2E3545;
+  --muted:     #8A95A8;
+  --border:    rgba(58,66,85,0.1);
+  --border-act:#7A8FA8;
+  --up:        #6A8FA8;
+  --down:      #A08878;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  background: linear-gradient(160deg, var(--header-bg) 0%, #2E3545 100%);
+  padding: 2.8rem 2rem 2.4rem;
+  position: relative;
+  overflow: hidden;
+}
+header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 60px,
+    rgba(255,255,255,0.018) 60px,
+    rgba(255,255,255,0.018) 61px
+  );
+  pointer-events: none;
+}
+.header-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+.header-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-lt);
+  margin-bottom: 12px;
+  opacity: 0.8;
+}
+header h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+  color: #EDF0F4;
+  line-height: 1.12;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+header h1 em {
+  font-style: italic;
+  color: var(--accent-lt);
+}
+header p {
+  font-size: 0.875rem;
+  color: rgba(237,240,244,0.48);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+/* ── Main ── */
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2.2rem 1.5rem 5rem;
+}
+
+.card-label {
+  font-size: 0.67rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+}
+
+/* ── Transpositions-Wähler ── */
+.transpose-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px 20px;
+  margin-bottom: 1.6rem;
+  box-shadow: 0 1px 4px rgba(46,53,69,0.06);
+}
+.transpose-card .card-label { margin-bottom: 18px; }
+
+.semitone-display {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.semitone-btn {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-dark);
+  background: var(--bg);
+  color: var(--silver);
+  font-size: 1.2rem;
+  font-weight: 300;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  user-select: none;
+}
+.semitone-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--silver-gl);
+}
+.semitone-center { flex: 1; text-align: center; }
+.semitone-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.8rem;
+  line-height: 1;
+  display: block;
+  color: var(--silver);
+  transition: color 0.2s;
+}
+.semitone-num.up   { color: var(--up); }
+.semitone-num.down { color: var(--down); }
+.semitone-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 4px;
+  display: block;
+}
+
+/* Punkte */
+.semitone-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+.sdot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--bg-dark);
+  transition: background 0.18s;
+}
+.sdot.up   { background: var(--up); }
+.sdot.down { background: var(--down); }
+
+.key-hint {
+  margin-top: 14px;
+  padding: 9px 14px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  display: none;
+  border: 1px solid var(--border);
+}
+.key-hint strong { color: var(--accent); font-weight: 600; }
+
+/* ── Noten-Grid ── */
+.notes-section { margin-bottom: 1.6rem; }
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.clear-link {
+  font-size: 0.74rem; font-weight: 500;
+  color: var(--accent); background: none; border: none;
+  cursor: pointer; padding: 3px 0;
+  opacity: 0.75; transition: opacity 0.15s;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.clear-link:hover { opacity: 1; }
+.clear-link:disabled { opacity: 0.3; cursor: default; }
+
+.note-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.note-slot { display: flex; flex-direction: column; }
+
+.note-slot input {
+  height: 58px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  padding: 0 8px;
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.45rem;
+  color: var(--ink);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.note-slot input::placeholder {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  color: var(--bg-dark);
+}
+.note-slot:focus-within input        { border-color: var(--accent); }
+.note-slot:focus-within .note-arrow  { border-color: var(--accent); background: var(--silver-gl); color: var(--accent); }
+.note-slot:focus-within .note-result { border-color: var(--accent); }
+
+.note-arrow {
+  height: 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--silver-lt);
+  font-size: 0.78rem;
+  transition: all 0.15s;
+}
+.note-result {
+  height: 58px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.35rem;
+  color: var(--ink);
+  transition: color 0.18s;
+  gap: 2px;
+}
+.note-result .res-acc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.note-result.up   { color: var(--up); }
+.note-result.up .res-acc { color: var(--accent-lt); }
+.note-result.down { color: var(--down); }
+.note-result.neutral { color: var(--silver); }
+.note-result.empty   { color: var(--bg-dark); }
+.note-result.invalid { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; color: var(--silver-lt); }
+
+/* ── Tonleiter ── */
+.scale-section {
+  background: var(--header-bg);
+  border-radius: 14px;
+  padding: 20px 22px 18px;
+  margin-bottom: 1.6rem;
+}
+.scale-label { color: rgba(237,240,244,0.38); margin-bottom: 12px; }
+.scale-head { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.scale-key-btn {
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: rgba(237,240,244,0.48);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.76rem; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+}
+.scale-key-btn.active {
+  background: rgba(122,143,168,0.25);
+  border-color: var(--accent-lt);
+  color: var(--accent-lt);
+}
+.scale-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.scale-note {
+  flex: 1; min-width: 36px;
+  padding: 9px 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 7px;
+  text-align: center;
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.05rem;
+  color: rgba(237,240,244,0.5);
+  transition: all 0.2s;
+}
+.scale-note.transposed {
+  background: rgba(122,143,168,0.2);
+  color: var(--accent-lt);
+}
+.scale-note .deg {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  color: rgba(237,240,244,0.2);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+
+/* ── Info-Karten ── */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 1.6rem;
+}
+.info-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 1px 3px rgba(46,53,69,0.04);
+}
+.info-card-title {
+  font-weight: 600; font-size: 0.8rem;
+  color: var(--ink); margin-bottom: 5px;
+}
+.info-card-body { font-size: 0.76rem; color: var(--muted); line-height: 1.55; }
+.info-card-body strong { color: var(--accent); font-weight: 600; }
+
+/* ── H/B ── */
+.hb-section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 1.6rem;
+}
+.hb-row { display: flex; gap: 8px; margin-top: 12px; }
+.hb-pill {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 13px;
+  background: var(--bg);
+  border-radius: 9px;
+  border: 1px solid var(--border);
+}
+.hb-from { font-family: 'DM Serif Display', serif; font-size: 1.7rem; color: var(--ink); }
+.hb-arr  { color: var(--silver-lt); font-size: 1rem; }
+.hb-to   { font-family: 'DM Serif Display', serif; font-size: 1.7rem; color: var(--accent); }
+
+footer {
+  text-align: center; padding: 1.5rem;
+  font-size: 0.7rem; color: var(--silver-lt);
+  border-top: 1px solid var(--bg-dark);
+}
+
+@media (max-width: 480px) {
+  .note-grid  { grid-template-columns: repeat(2, 1fr); }
+  .info-grid  { grid-template-columns: 1fr; }
+  .hb-row     { flex-direction: column; }
+  header      { padding: 2rem 1.25rem 2rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <p class="header-eyebrow">Musikwerkzeug · Querflöte</p>
+    <h1>Noten <em>transponieren</em></h1>
+    <p>Gib deine Noten ein, wähle das Intervall — und sieh sofort die umgeschriebene Tonart.</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- Transpositions-Wähler -->
+  <div class="transpose-card">
+    <span class="card-label" style="margin-bottom:16px;">Intervall</span>
+    <div class="semitone-display">
+      <button class="semitone-btn" id="btnMinus" aria-label="Halbton tiefer">−</button>
+      <div class="semitone-center">
+        <span class="semitone-num" id="semitoneNum">0</span>
+        <span class="semitone-label" id="semitoneLabel">keine Transposition</span>
+      </div>
+      <button class="semitone-btn" id="btnPlus" aria-label="Halbton höher">+</button>
+    </div>
+    <div class="semitone-dots" id="semitoneDots"></div>
+    <div class="key-hint" id="keyHint"></div>
+  </div>
+
+  <!-- Noten-Slots -->
+  <div class="notes-section">
+    <div class="section-head">
+      <span class="card-label">Deine Noten</span>
+      <button class="clear-link" id="clearBtn" disabled>Alle löschen</button>
+    </div>
+    <div class="note-grid" id="noteGrid"></div>
+  </div>
+
+  <!-- Tonleiter -->
+  <div class="scale-section">
+    <span class="card-label scale-label">Tonleiter — Vergleich</span>
+    <div class="scale-head">
+      <button class="scale-key-btn active" data-key="C">C-Dur</button>
+      <button class="scale-key-btn" data-key="G">G-Dur</button>
+      <button class="scale-key-btn" data-key="D">D-Dur</button>
+      <button class="scale-key-btn" data-key="F">F-Dur</button>
+      <button class="scale-key-btn" data-key="Bb">Bb-Dur</button>
+    </div>
+    <div class="scale-row" id="scaleRow"></div>
+  </div>
+
+  <!-- Info -->
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-card-title">Querflöte in C</div>
+      <div class="info-card-body">
+        Die Querflöte ist ein C-Instrument — was du greifst, klingt wie notiert. Keine automatische Verschiebung wie bei Klarinette (B) oder Horn (F).
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title">Wann transponieren?</div>
+      <div class="info-card-body">
+        Wenn ein Stück in <strong>Eb</strong> oder <strong>Ab</strong> notiert ist, aber du es in einer griffigeren Tonart spielen möchtest.
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title">+ Halbtöne = höher</div>
+      <div class="info-card-body">
+        Positive Werte: das Stück klingt <strong>höher</strong>. Aus C wird bei +2 ein D, bei +3 ein Eb.
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title">− Halbtöne = tiefer</div>
+      <div class="info-card-body">
+        Negative Werte: das Stück klingt <strong>tiefer</strong>. Aus Bb wird bei −2 ein Ab.
+      </div>
+    </div>
+  </div>
+
+  <!-- H/B -->
+  <div class="hb-section">
+    <span class="card-label">Notation: H und B</span>
+    <p style="font-size:0.8rem;color:var(--muted);margin-top:6px;line-height:1.5;">
+      Diese App verwendet die englische Schreibweise — H als <strong>B</strong> eingeben, deutsches B als <strong>Bb</strong>.
+    </p>
+    <div class="hb-row">
+      <div class="hb-pill"><span class="hb-from">H</span><span class="hb-arr">→</span><span class="hb-to">B</span></div>
+      <div class="hb-pill"><span class="hb-from">B</span><span class="hb-arr">→</span><span class="hb-to">Bb</span></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>Querflöten-Transponier · Alle Berechnungen lokal im Browser</footer>
+
+<script>
+const SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const TO_IDX = {};
+SHARP.forEach((n,i) => TO_IDX[n] = i);
+['Db','Eb','Fb','Gb','Ab','Bb','Cb'].forEach((n,i) => {
+  TO_IDX[n] = [1,3,4,6,8,10,11][i];
+});
+TO_IDX['H'] = 11; TO_IDX['h'] = 11;
+
+const FLAT_PREF = new Set([1,3,6,8,10]);
+function noteDisplay(idx) { return FLAT_PREF.has(idx) ? FLAT[idx] : SHARP[idx]; }
+
+function parseNote(str) {
+  str = str.trim().replace(/^[Hh]$/, 'B').replace(/^[Hh]([#b])/, 'B$1');
+  const m = str.match(/^([A-Ga-g][#b]?)/);
+  if (!m) return null;
+  const key = m[1][0].toUpperCase() + m[1].slice(1);
+  const idx = TO_IDX[key];
+  return idx !== undefined ? { idx, display: key } : null;
+}
+
+const MAJOR_STEPS = [0,2,4,5,7,9,11];
+const DEGREES = ['I','II','III','IV','V','VI','VII'];
+function majorScale(root) { return MAJOR_STEPS.map(s => (root + s) % 12); }
+
+// State
+let semitones = 0;
+
+// Punkte
+const dotsEl = document.getElementById('semitoneDots');
+for (let i = 0; i < 12; i++) { const d = document.createElement('div'); d.className = 'sdot'; dotsEl.appendChild(d); }
+function updateDots(v) {
+  dotsEl.querySelectorAll('.sdot').forEach((d,i) => {
+    d.classList.remove('up','down');
+    if (v > 0 && i < v) d.classList.add('up');
+    if (v < 0 && i < Math.abs(v)) d.classList.add('down');
+  });
+}
+
+const INAMES = {0:'keine Transposition',1:'kleine Sekunde ↑',2:'grosse Sekunde ↑',3:'kleine Terz ↑',4:'grosse Terz ↑',5:'Quarte ↑',6:'Tritonus','-1':'kleine Sekunde ↓','-2':'grosse Sekunde ↓','-3':'kleine Terz ↓','-4':'grosse Terz ↓','-5':'Quarte ↓','-6':'Tritonus'};
+
+function updateIntervalUI() {
+  const num = document.getElementById('semitoneNum');
+  const lbl = document.getElementById('semitoneLabel');
+  const hint = document.getElementById('keyHint');
+  num.textContent = semitones > 0 ? '+' + semitones : String(semitones);
+  num.className = 'semitone-num' + (semitones > 0 ? ' up' : semitones < 0 ? ' down' : '');
+  lbl.textContent = INAMES[String(semitones)] || (semitones > 0 ? '+'+semitones+' Halbtöne' : semitones+' Halbtöne');
+  if (semitones !== 0) {
+    hint.style.display = 'block';
+    hint.innerHTML = 'C-Dur → <strong>' + noteDisplay((0+semitones+12)%12) + '-Dur</strong> &nbsp;·&nbsp; G-Dur → <strong>' + noteDisplay((7+semitones+12)%12) + '-Dur</strong>';
+  } else {
+    hint.style.display = 'none';
+  }
+  updateDots(semitones);
+  updateAll();
+}
+
+document.getElementById('btnPlus').addEventListener('click', () => { if (semitones < 6) { semitones++; updateIntervalUI(); } });
+document.getElementById('btnMinus').addEventListener('click', () => { if (semitones > -6) { semitones--; updateIntervalUI(); } });
+
+// Grid
+const noteGrid = document.getElementById('noteGrid');
+const noteInputs = [], noteResults = [];
+for (let i = 0; i < 8; i++) {
+  const slot = document.createElement('div'); slot.className = 'note-slot';
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.placeholder = 'Note'; inp.autocomplete = 'off'; inp.spellcheck = false;
+  const arrow = document.createElement('div'); arrow.className = 'note-arrow'; arrow.textContent = '↓';
+  const res = document.createElement('div'); res.className = 'note-result empty'; res.textContent = '—';
+  slot.appendChild(inp); slot.appendChild(arrow); slot.appendChild(res);
+  noteGrid.appendChild(slot);
+  noteInputs.push(inp); noteResults.push(res);
+  inp.addEventListener('input', updateAll);
+}
+
+function updateAll() {
+  noteInputs.forEach((inp, i) => {
+    const res = noteResults[i];
+    const raw = inp.value.trim();
+    if (!raw) { res.innerHTML = '—'; res.className = 'note-result empty'; return; }
+    const parsed = parseNote(raw);
+    if (!parsed) { res.innerHTML = '?'; res.className = 'note-result invalid'; return; }
+    const newIdx = (parsed.idx + semitones + 12) % 12;
+    const newNote = noteDisplay(newIdx);
+    const dir = semitones > 0 ? 'up' : semitones < 0 ? 'down' : 'neutral';
+    const acc = semitones === 0 ? '' : '<span class="res-acc">' + (semitones > 0 ? '+'+semitones+' ↑' : semitones+' ↓') + '</span>';
+    res.innerHTML = '<span>' + esc(newNote) + '</span>' + acc;
+    res.className = 'note-result ' + dir;
+  });
+  renderScale();
+  document.getElementById('clearBtn').disabled = noteInputs.every(i => !i.value.trim());
+}
+
+// Tonleiter
+let activeKey = 'C';
+document.querySelectorAll('.scale-key-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.scale-key-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeKey = btn.dataset.key;
+    renderScale();
+  });
+});
+
+function renderScale() {
+  const row = document.getElementById('scaleRow');
+  const rootIdx = TO_IDX[activeKey];
+  if (rootIdx === undefined) return;
+  row.innerHTML = '';
+  majorScale(rootIdx).forEach((idx, deg) => {
+    const newIdx = (idx + semitones + 12) % 12;
+    const note = semitones !== 0 ? noteDisplay(newIdx) : noteDisplay(idx);
+    const div = document.createElement('div');
+    div.className = 'scale-note' + (semitones !== 0 ? ' transposed' : '');
+    div.innerHTML = '<span class="deg">' + DEGREES[deg] + '</span>' + esc(note);
+    row.appendChild(div);
+  });
+}
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  noteInputs.forEach(i => i.value = '');
+  updateAll(); noteInputs[0].focus();
+});
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+updateIntervalUI();
+renderScale();
+</script>
+</body>
+</html>
