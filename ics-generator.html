@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ICS Kalender-Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body {
@@ -11,7 +14,7 @@
       background: #f5f5f3;
       color: #1a1a18;
       margin: 0;
-      padding: 2rem 1rem;
+      padding: calc(50px + 2rem) 1rem 3rem;
     }
     .container {
       max-width: 680px;
@@ -117,13 +120,61 @@
       margin-bottom: 10px;
     }
 
+    /* ── Shared nav chrome ── */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:400; }
+    .overlay.show { display:block; }
+    .sidenav { height:100%; width:0; position:fixed; z-index:500; top:0; left:0; background:#fff; border-right:0.5px solid #e2e2df; overflow-x:hidden; transition:width .25s cubic-bezier(.4,0,.2,1); padding-top:64px; box-shadow:2px 0 24px rgba(0,0,0,.05); }
+    .sidenav.open { width:240px; }
+    .sidenav-label { padding:1.1rem 28px 4px; font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:#185fa5; opacity:.85; }
+    .sidenav a { display:block; padding:9px 28px; font-family:'DM Mono',monospace; font-size:13px; color:#888; text-decoration:none; letter-spacing:.02em; white-space:nowrap; transition:color .12s, padding-left .12s; }
+    .sidenav a:hover { color:#1a1a18; padding-left:32px; }
+    .sidenav a.active { color:#185fa5; }
+    .sidenav .closebtn { position:absolute; top:16px; right:18px; font-family:'DM Mono',monospace; font-size:13px; color:#888; cursor:pointer; background:none; border:none; padding:0; transition:color .12s; }
+    .sidenav .closebtn:hover { color:#185fa5; }
+    .topnav { position:fixed; top:0; left:0; right:0; height:50px; z-index:300; display:flex; align-items:center; padding:0 2rem; background:rgba(245,245,243,.85); backdrop-filter:blur(12px); border-bottom:0.5px solid #e2e2df; }
+    .nav-logo { font-family:'DM Mono',monospace; font-size:12px; color:#185fa5; text-decoration:none; letter-spacing:.08em; opacity:.9; margin-right:auto; }
+    .topnav-links { display:flex; list-style:none; align-items:center; gap:2px; margin:0; padding:0; }
+    .topnav-links a { font-family:'DM Mono',monospace; font-size:11px; color:#888; text-decoration:none; padding:5px 12px; border-radius:5px; letter-spacing:.04em; transition:color .15s; }
+    .topnav-links a:hover { color:#1a1a18; }
+    .hamburger { display:flex; flex-direction:column; gap:5px; cursor:pointer; padding:6px; background:none; border:none; margin-left:8px; }
+    .hamburger span { display:block; width:18px; height:1px; background:#999; transition:transform .2s, opacity .2s, background .12s; }
+    .hamburger:hover span { background:#185fa5; }
+    .hamburger.open span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
+    .hamburger.open span:nth-child(2){ opacity:0; }
+    .hamburger.open span:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+
     @media (max-width: 480px) {
       .event-grid { grid-template-columns: 1fr; }
       .full { grid-column: 1; }
+      .topnav { padding: 0 1.25rem; }
+      .topnav-links { display:none; }
     }
   </style>
 </head>
 <body>
+
+<div class="overlay" id="overlay" onclick="closeNav()"></div>
+<div class="sidenav" id="sidenav">
+  <button class="closebtn" onclick="closeNav()">[ close ]</button>
+  <div class="sidenav-label">Pages</div>
+  <a href="index.html">Home</a>
+  <a href="index.html#tools">Tools</a>
+  <a href="index.html#about">About</a>
+  <a href="index.html#contact">Contact</a>
+  
+</div>
+<nav class="topnav">
+  <a href="index.html" class="nav-logo">tools/</a>
+  <ul class="topnav-links">
+    <li><a href="index.html#tools">tools</a></li>
+    <li><a href="index.html#about">about</a></li>
+    <li><a href="index.html#contact">contact</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" onclick="toggleNav()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
 <div class="container">
   <h1>ICS Kalender-Generator</h1>
 
@@ -140,6 +191,9 @@
 </div>
 
 <script>
+  function toggleNav(){var s=document.getElementById('sidenav'),o=document.getElementById('overlay'),b=document.getElementById('hamburger');var open=s.classList.contains('open');s.classList.toggle('open',!open);o.classList.toggle('show',!open);b.classList.toggle('open',!open);}
+  function closeNav(){document.getElementById('sidenav').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.getElementById('hamburger').classList.remove('open');}
+
   let eventCount = 0;
 
   function pad(n) { return String(n).padStart(2, '0'); }
