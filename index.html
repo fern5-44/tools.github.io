@@ -616,20 +616,24 @@
     <h2 class="section-title">Request a tool</h2>
 
     <div class="form-card">
-      <div id="contactForm">
+      <form id="contactForm" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="70b66010-ec97-4d54-a6dd-b40e40aea5eb">
+        <input type="hidden" name="subject" value="tools/ — new request">
+        <input type="hidden" name="from_name" value="tools/ contact form">
+        <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" autocomplete="off">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Your name</label>
-            <input type="text" id="cf-name" placeholder="Jane Doe" />
+            <input type="text" id="cf-name" name="name" placeholder="Jane Doe" />
           </div>
           <div class="form-group">
             <label class="form-label">Email (optional)</label>
-            <input type="email" id="cf-email" placeholder="jane@example.com" />
+            <input type="email" id="cf-email" name="email" placeholder="jane@example.com" />
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Category</label>
-          <select id="cf-cat">
+          <select id="cf-cat" name="category">
             <option>Tool request</option>
             <option>Bug report</option>
             <option>General feedback</option>
@@ -638,13 +642,13 @@
         </div>
         <div class="form-group">
           <label class="form-label">Describe the tool you need</label>
-          <textarea id="cf-msg" placeholder="e.g. A tool that converts CSV to JSON..."></textarea>
+          <textarea id="cf-msg" name="message" placeholder="e.g. A tool that converts CSV to JSON..." required></textarea>
         </div>
-        <button class="btn-send" id="cf-btn" onclick="submitForm()">
+        <button class="btn-send" id="cf-btn" type="submit">
           Send request →
         </button>
         <div class="form-status" id="cf-status"></div>
-      </div>
+      </form>
       <div class="success-msg" id="successMsg">[ request received — thanks ]</div>
     </div>
   </section>
@@ -657,17 +661,6 @@
 </div>
 
 <script>
-  /* =========================================================
-     KONTAKTFORMULAR — Web3Forms
-     ---------------------------------------------------------
-     1. Auf https://web3forms.com  deine E-Mail eingeben.
-     2. Du bekommst sofort einen Access-Key per Mail.
-     3. Diesen Key unten zwischen die Anführungszeichen setzen.
-        (Der Key darf öffentlich sein — er erlaubt nur das
-         Senden an DEINE Adresse, sonst nichts.)
-     ========================================================= */
-  const WEB3FORMS_KEY = "DEIN-ACCESS-KEY-HIER";
-
   function toggleNav() {
     const sidenav = document.getElementById('sidenav');
     const overlay = document.getElementById('overlay');
@@ -710,59 +703,49 @@
     s.className = 'form-status show' + (isError ? ' err' : '');
   }
 
-  async function submitForm() {
-    const name = document.getElementById('cf-name').value.trim();
-    const email = document.getElementById('cf-email').value.trim();
-    const cat = document.getElementById('cf-cat').value;
-    const msg = document.getElementById('cf-msg').value.trim();
-    const btn = document.getElementById('cf-btn');
+  const contactForm = document.getElementById('contactForm');
+  contactForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
 
+    const btn = document.getElementById('cf-btn');
+    const msg = document.getElementById('cf-msg').value.trim();
     if (!msg) {
       showStatus('[ please describe the tool you need ]', true);
       return;
     }
-    if (WEB3FORMS_KEY.indexOf('70b66010-ec97-4d54-a6dd-b40e40aea5') !== -1) {
-      showStatus('[ form not configured yet — set the Web3Forms key ]', true);
-      return;
-    }
 
-    btn.disabled = true;
     const originalText = btn.textContent;
+    btn.disabled = true;
     btn.textContent = 'sending…';
     showStatus('', false);
     document.getElementById('cf-status').className = 'form-status';
 
-    const payload = {
-      access_key: WEB3FORMS_KEY,
-      subject: 'tools/ — ' + cat,
-      from_name: 'tools/ contact form',
-      name: name || '(no name)',
-      category: cat,
-      message: msg
-    };
-    if (email) { payload.email = email; payload.replyto = email; }
+    // Reply-To auf die eingegebene E-Mail setzen (falls vorhanden)
+    const email = document.getElementById('cf-email').value.trim();
+    const formData = new FormData(contactForm);
+    if (email) formData.append('replyto', email);
 
     try {
       const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload)
+        headers: { 'Accept': 'application/json' },
+        body: formData
       });
       const data = await res.json();
       if (data.success) {
-        document.getElementById('contactForm').style.display = 'none';
+        contactForm.style.display = 'none';
         document.getElementById('successMsg').style.display = 'block';
       } else {
         btn.disabled = false;
         btn.textContent = originalText;
-        showStatus('[ something went wrong — please try again ]', true);
+        showStatus('[ ' + (data.message || 'something went wrong — please try again') + ' ]', true);
       }
     } catch (err) {
       btn.disabled = false;
       btn.textContent = originalText;
       showStatus('[ network error — check your connection and retry ]', true);
     }
-  }
+  });
 
   // Active section highlight on scroll
   const sections = document.querySelectorAll('section[id]');
