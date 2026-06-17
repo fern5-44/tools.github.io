@@ -18,6 +18,7 @@
       --dim:       #3a3835;
       --accent:    #b87888;
       --accent-dim:rgba(184,120,136,0.1);
+      --error:     #d98b86;
       --mono:      'DM Mono', monospace;
       --sans:      'DM Sans', sans-serif;
     }
@@ -437,6 +438,18 @@
       transition: opacity 0.15s;
     }
     .btn-send:hover { opacity: 0.85; }
+    .btn-send:disabled { opacity: 0.5; cursor: default; }
+
+    .form-status {
+      display: none;
+      margin-top: 0.9rem;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      line-height: 1.5;
+    }
+    .form-status.show { display: block; }
+    .form-status.err { color: var(--error); }
 
     .success-msg {
       display: none;
@@ -547,6 +560,7 @@
         <span class="tool-num">01</span>
         <div class="tool-name">ICS Calendar Generator</div>
         <div class="tool-desc">Pack multiple events into a .ics file and share via QR code. Works with Apple, Google and Outlook.</div>
+        <div class="tool-footer"><span class="tool-tag">new</span></div>
       </a>
 
       <a class="tool-card" href="stammbaum.html" data-category="other">
@@ -554,6 +568,7 @@
         <span class="tool-num">02</span>
         <div class="tool-name">Family Tree</div>
         <div class="tool-desc">Digitise and visualise your family tree.</div>
+        <div class="tool-footer"><span class="tool-tag">new</span></div>
       </a>
 
       <a class="tool-card" href="music-capo.html" data-category="music">
@@ -564,7 +579,7 @@
         <div class="tool-footer"><span class="tool-tag">new</span></div>
       </a>
 
-      <a class="tool-card" href="music-qf.html" data-category="music">
+      <a class="tool-card" href="music-gf.html" data-category="music">
         <span class="tool-arrow">↗</span>
         <span class="tool-num">04</span>
         <div class="tool-name">Flute Transposer</div>
@@ -605,16 +620,16 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Your name</label>
-            <input type="text" placeholder="Jane Doe" />
+            <input type="text" id="cf-name" placeholder="Jane Doe" />
           </div>
           <div class="form-group">
             <label class="form-label">Email (optional)</label>
-            <input type="email" placeholder="jane@example.com" />
+            <input type="email" id="cf-email" placeholder="jane@example.com" />
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Category</label>
-          <select>
+          <select id="cf-cat">
             <option>Tool request</option>
             <option>Bug report</option>
             <option>General feedback</option>
@@ -623,11 +638,12 @@
         </div>
         <div class="form-group">
           <label class="form-label">Describe the tool you need</label>
-          <textarea placeholder="e.g. A tool that converts CSV to JSON..."></textarea>
+          <textarea id="cf-msg" placeholder="e.g. A tool that converts CSV to JSON..."></textarea>
         </div>
-        <button class="btn-send" onclick="submitForm()">
+        <button class="btn-send" id="cf-btn" onclick="submitForm()">
           Send request →
         </button>
+        <div class="form-status" id="cf-status"></div>
       </div>
       <div class="success-msg" id="successMsg">[ request received — thanks ]</div>
     </div>
@@ -635,12 +651,23 @@
 
   <footer>
     <span>tools/</span>
-    <span>runs locally · no data sent</span>
+    <span>runs locally · contact form via Web3Forms</span>
   </footer>
 
 </div>
 
 <script>
+  /* =========================================================
+     KONTAKTFORMULAR — Web3Forms
+     ---------------------------------------------------------
+     1. Auf https://web3forms.com  deine E-Mail eingeben.
+     2. Du bekommst sofort einen Access-Key per Mail.
+     3. Diesen Key unten zwischen die Anführungszeichen setzen.
+        (Der Key darf öffentlich sein — er erlaubt nur das
+         Senden an DEINE Adresse, sonst nichts.)
+     ========================================================= */
+  const WEB3FORMS_KEY = "DEIN-ACCESS-KEY-HIER";
+
   function toggleNav() {
     const sidenav = document.getElementById('sidenav');
     const overlay = document.getElementById('overlay');
@@ -676,10 +703,65 @@
     });
   });
 
-  // Contact form
-  function submitForm() {
-    document.getElementById('contactForm').style.display = 'none';
-    document.getElementById('successMsg').style.display = 'block';
+  // Contact form → Web3Forms
+  function showStatus(text, isError) {
+    const s = document.getElementById('cf-status');
+    s.textContent = text;
+    s.className = 'form-status show' + (isError ? ' err' : '');
+  }
+
+  async function submitForm() {
+    const name = document.getElementById('cf-name').value.trim();
+    const email = document.getElementById('cf-email').value.trim();
+    const cat = document.getElementById('cf-cat').value;
+    const msg = document.getElementById('cf-msg').value.trim();
+    const btn = document.getElementById('cf-btn');
+
+    if (!msg) {
+      showStatus('[ please describe the tool you need ]', true);
+      return;
+    }
+    if (WEB3FORMS_KEY.indexOf('70b66010-ec97-4d54-a6dd-b40e40aea5') !== -1) {
+      showStatus('[ form not configured yet — set the Web3Forms key ]', true);
+      return;
+    }
+
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = 'sending…';
+    showStatus('', false);
+    document.getElementById('cf-status').className = 'form-status';
+
+    const payload = {
+      access_key: WEB3FORMS_KEY,
+      subject: 'tools/ — ' + cat,
+      from_name: 'tools/ contact form',
+      name: name || '(no name)',
+      category: cat,
+      message: msg
+    };
+    if (email) { payload.email = email; payload.replyto = email; }
+
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('contactForm').style.display = 'none';
+        document.getElementById('successMsg').style.display = 'block';
+      } else {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        showStatus('[ something went wrong — please try again ]', true);
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      showStatus('[ network error — check your connection and retry ]', true);
+    }
   }
 
   // Active section highlight on scroll
