@@ -225,8 +225,11 @@
   }
 
   .keyboard-wrap{
+    /* ÄNDERUNG: overflow-y hidden + mehr Platz unten — die C-Marken ragten unter die
+       Tasten hinaus und erzeugten dadurch den senkrechten Scrollbalken */
     overflow-x: auto;
-    padding: 14px 4px 10px;
+    overflow-y: hidden;
+    padding: 14px 4px 30px;
     margin-top: 22px;
   }
   .keyboard{
@@ -349,9 +352,19 @@
 
   <div class="card input-card">
     <label for="chordInput">Akkord</label>
-    <input type="text" id="chordInput" autocomplete="off" spellcheck="false" placeholder="z. B. C, Dm7, G7, F#maj7, Bbsus4" value="Cmaj7">
+    <!-- ÄNDERUNG: value bleibt leer, damit beim Laden kein Akkord vorgegeben ist -->
+    <input type="text" id="chordInput" autocomplete="off" spellcheck="false" placeholder="..." value="">
     <div class="presets" id="presets"></div>
     <div class="hint" id="hint"></div>
+  </div>
+
+  <!-- ÄNDERUNG: neue Karte für den Leerlauf-Zustand (eine Oktave, alle Töne grau beschriftet).
+       Steht nur hier — die frühere zweite Kopie hinter </script> ist entfernt. -->
+  <div class="card" id="emptyCard">
+    <p class="hint" style="margin-top:0;">Noch kein Akkord eingegeben — die mittlere Oktave ist zur Orientierung beschriftet:</p>
+    <div class="keyboard-wrap">
+      <div class="keyboard" id="keyboardEmpty"></div>
+    </div>
   </div>
 
   <div class="card" id="resultCard" style="display:none;">
@@ -526,14 +539,22 @@
   // position of black key center as fraction between white keys, per pc
   const BLACK_OFFSET = { 1:0.68, 3:1.68, 6:3.62, 8:4.65, 10:5.68 };
 
-  function renderKeyboard(container, notes){
+  // ÄNDERUNG: renderKeyboard hat jetzt einen dritten Parameter "opts"
+  //   opts.octaves     = feste Oktavenliste (z. B. [3,4,5]) statt automatisch aus den Tönen
+  //   opts.labelOctave = Nummer der Oktave, deren Tasten alle beschriftet werden
+  function renderKeyboard(container, notes, opts){
+    opts = opts || {};
     container.innerHTML = '';
-    const absVals = notes.map(function(n){ return n.abs; });
-    let minOct = Math.floor(Math.min.apply(null, absVals) / 12) - 1;
-    let maxOct = Math.floor(Math.max.apply(null, absVals) / 12) + 1;
-    if (maxOct - minOct > 5) maxOct = minOct + 5;
     const octaves = [];
-    for (let o = minOct; o <= maxOct; o++) octaves.push(o);
+    if (opts.octaves){
+      opts.octaves.forEach(function(o){ octaves.push(o); });
+    } else {
+      const absVals = notes.map(function(n){ return n.abs; });
+      let minOct = Math.floor(Math.min.apply(null, absVals) / 12) - 1;
+      let maxOct = Math.floor(Math.max.apply(null, absVals) / 12) + 1;
+      if (maxOct - minOct > 5) maxOct = minOct + 5;
+      for (let o = minOct; o <= maxOct; o++) octaves.push(o);
+    }
 
     const WKW = 36; // white key width
     const highlightMap = {};
@@ -549,7 +570,9 @@
         el.style.left = x + 'px';
         const lbl = document.createElement('div');
         lbl.className = 'klabel';
-        lbl.textContent = hi ? hi.name : '';
+        // ÄNDERUNG: in der labelOctave werden auch Tasten ohne Akkordton grau beschriftet.
+        // Für deutsches H auf der weißen Taste: (pc === 11 ? 'H' : SHARP_NAMES[pc])
+        lbl.textContent = hi ? hi.name : (opts.labelOctave === oct ? SHARP_NAMES[pc] : '');
         el.appendChild(lbl);
         if (pc === 0){
           const cm = document.createElement('div');
@@ -573,7 +596,8 @@
         el.style.left = (bx + BLACK_OFFSET[pc]*WKW - 11) + 'px';
         const lbl = document.createElement('div');
         lbl.className = 'klabel';
-        lbl.textContent = hi ? hi.name : '';
+        // ÄNDERUNG: dasselbe für die schwarzen Tasten
+        lbl.textContent = hi ? hi.name : (opts.labelOctave === oct ? SHARP_NAMES[pc] : '');
         el.appendChild(lbl);
         container.appendChild(el);
       });
@@ -591,6 +615,16 @@
   const voicingNote = document.getElementById('voicingNote');
   const keyboard = document.getElementById('keyboard');
 
+  // ÄNDERUNG: Referenzen und Renderer für die Leerlauf-Tastatur
+  const emptyCard = document.getElementById('emptyCard');
+  const keyboardEmpty = document.getElementById('keyboardEmpty');
+
+  function renderEmptyKeyboard(){
+    // ÄNDERUNG: gleiche Breite wie die Akkord-Ansicht (C3–B5), keine Farben,
+    // beschriftet ist nur die mittlere Oktave C4–B4
+    renderKeyboard(keyboardEmpty, [], { octaves: [3,4,5], labelOctave: 4 });
+  }
+
   let currentChord = null;
 
   function renderChord(){
@@ -600,6 +634,9 @@
       hint.textContent = parsed.error === 'leer' ? '' : 'Nicht erkannt: ' + parsed.error;
       hint.className = 'hint' + (parsed.error === 'leer' ? '' : ' error');
       resultCard.style.display = 'none';
+      // ÄNDERUNG: kein gültiger Akkord -> Leerlauf-Tastatur zeigen
+      emptyCard.style.display = '';
+      renderEmptyKeyboard();
       currentChord = null;
       return;
     }
@@ -608,6 +645,8 @@
     hint.className = 'hint';
     currentChord = parsed;
     resultCard.style.display = '';
+    // ÄNDERUNG: Akkord erkannt -> Leerlauf-Tastatur ausblenden
+    emptyCard.style.display = 'none';
 
     chordName.textContent = parsed.displayName;
     chordQuality.textContent = parsed.quality.name;
@@ -655,7 +694,8 @@
   input.addEventListener('input', renderChord);
   topSelect.addEventListener('change', updateVoicing);
 
-  const presets = ['C', 'G', 'Am', 'F', 'Dm7', 'G7', 'Cmaj7', 'Em', 'Fmaj7', 'Bbsus4'];
+  // ÄNDERUNG: Akkord-Auswahl auf G, A, D, Bm, C gesetzt
+  const presets = ['G', 'A', 'D', 'Bm', 'C'];
   const presetsEl = document.getElementById('presets');
   presets.forEach(function(p){
     const btn = document.createElement('button');
