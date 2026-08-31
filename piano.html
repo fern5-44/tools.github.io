@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klavier-Akkorde — Töne &amp; Voicing-Rechner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0e0e10;
+    --bg-raised: #18181b;
+    --bg-sunken: #0a0a0c;
+    --border: #2b2b2f;
+    --text: #eceeed;
+    --text-dim: #8b8c92;
+    --accent: #c9a15a;
+    --accent-soft: #e2c98a;
+    --accent-dim: #6e5730;
+    --felt: #9c4a45;
+    --felt-soft: #c17b74;
+    --err: #b0716e;
+    --key-white: #d6d6d9;
+    --key-white-hi: #d9ae5c;
+    --key-black: #17171a;
+    --key-black-hi: #a97d3d;
+    --serif: "Fraunces", Georgia, "Times New Roman", serif;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --radius: 8px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1100px 480px at 12% -10%, rgba(201,161,90,0.07), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  a{ color: var(--accent); text-decoration: none; }
+  a:hover{ text-decoration: underline; }
+
+  header{
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap: 10px;
+  }
+  header .brand{ font-weight:600; letter-spacing:-0.02em; color: var(--text); font-family: var(--serif); font-size: 17px; }
+  header nav a{ margin-left: 20px; color: var(--text-dim); font-size: 13.5px; transition: color .15s ease; }
+  header nav a:first-child{ margin-left:0; }
+  header nav a:hover{ color: var(--accent-soft); }
+
+  main{
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 52px 24px 90px;
+  }
+
+  .keylines{
+    display:flex;
+    gap: 2px;
+    margin-bottom: 18px;
+    height: 14px;
+    align-items: flex-end;
+  }
+  .keylines i{
+    display:block;
+    width: 5px;
+    background: var(--border);
+    border-radius: 1px;
+  }
+  .keylines i:nth-child(2n){ height: 14px; background: var(--accent-dim); }
+  .keylines i:nth-child(2n+1){ height: 8px; }
+
+  h1{
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(32px, 5.2vw, 44px);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 0 10px;
+    color: var(--text);
+  }
+  .subtitle{
+    color: var(--text-dim);
+    margin: 0 0 36px;
+    font-size: 15.5px;
+    max-width: 46ch;
+  }
+
+  .card{
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 26px;
+    margin-bottom: 22px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px -16px rgba(0,0,0,0.6);
+  }
+  .card.input-card{
+    border-top: 2px solid var(--accent-dim);
+  }
+
+  label{
+    display:block;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  input[type="text"]{
+    width: 100%;
+    background: var(--bg-sunken);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 500;
+    padding: 13px 16px;
+    border-radius: 6px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  input[type="text"]:focus{
+    outline: none;
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 0 3px rgba(201,161,90,0.16);
+  }
+  input[type="text"].invalid{
+    border-color: var(--err);
+  }
+
+  .presets{
+    margin-top: 14px;
+    display:flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .preset-btn{
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  .preset-btn:hover{ border-color: var(--accent-dim); color: var(--accent-soft); background: rgba(201,161,90,0.08); }
+
+  .hint{
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .hint.error{ color: var(--err); }
+
+  .result-head{
+    display:flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .chord-name{
+    font-family: var(--serif);
+    font-size: 32px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--accent-soft);
+  }
+  .chord-quality{
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .tones{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .tone-chip{
+    background: var(--bg-sunken);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 13px;
+    font-size: 13.5px;
+  }
+  .tone-chip .note{ font-weight: 600; color: var(--text); }
+  .tone-chip .role{ color: var(--text-dim); font-size: 12px; margin-left: 5px;}
+
+  .voicing-row{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  select{
+    background: var(--bg-sunken);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-family: var(--sans);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  select:focus{ outline: none; border-color: var(--accent-dim); }
+  .voicing-note{
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    font-style: italic;
+  }
+
+  .keyboard-wrap{
+    overflow-x: auto;
+    padding: 14px 4px 10px;
+    margin-top: 22px;
+  }
+  .keyboard{
+    position: relative;
+    height: 148px;
+    display: inline-block;
+    filter: drop-shadow(0 14px 22px rgba(0,0,0,0.45));
+  }
+  .wkey{
+    position: absolute;
+    top:0;
+    width: 35px;
+    height: 148px;
+    background: linear-gradient(180deg, var(--key-white) 0%, #c7c7cb 88%, #b9b9bd 100%);
+    border: 1px solid #00000030;
+    border-left: 1px solid #ffffff18;
+    border-radius: 0 0 5px 5px;
+    box-shadow: inset 0 -10px 10px -10px rgba(0,0,0,0.35);
+    transition: background .2s ease, box-shadow .2s ease;
+  }
+  .wkey.hi{ background: linear-gradient(180deg, var(--accent-soft) 0%, var(--key-white-hi) 88%, #c69a4c 100%); }
+  .wkey.hi.top{ background: linear-gradient(180deg, var(--felt-soft) 0%, var(--felt) 88%, #7c3936 100%); }
+  .bkey{
+    position: absolute;
+    top:0;
+    width: 21px;
+    height: 90px;
+    background: linear-gradient(180deg, #232327 0%, var(--key-black) 70%);
+    border-radius: 0 0 4px 4px;
+    box-shadow: inset 0 1px 0 #ffffff12, 0 4px 6px -2px rgba(0,0,0,0.5);
+    z-index: 2;
+  }
+  .bkey.hi{ background: linear-gradient(180deg, #c8a05a 0%, var(--key-black-hi) 70%); }
+  .bkey.hi.top{ background: linear-gradient(180deg, var(--felt-soft) 0%, var(--felt) 70%); }
+  .klabel{
+    position:absolute;
+    bottom: 8px;
+    left: 0;
+    right: 0;
+    text-align:center;
+    font-size: 10px;
+    font-family: var(--sans);
+    color: #6f6f76;
+    pointer-events:none;
+  }
+  .wkey.hi .klabel{ color: #3d2a0e; font-weight:600; }
+  .wkey.hi.top .klabel{ color: #f4e3e0; font-weight:600; }
+  .bkey .klabel{ color: #86868c; bottom: 6px; }
+  .bkey.hi .klabel{ color: #2b1c08; }
+  .bkey.hi.top .klabel{ color: #f4e3e0; font-weight:600; }
+  .cmark{
+    position:absolute;
+    bottom: -19px;
+    left:0; right:0;
+    text-align:center;
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  .legend{
+    display:flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:7px; }
+  .swatch{ width:11px; height:11px; border-radius:3px; display:inline-block; }
+
+  h2{
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 19px;
+    margin: 0 0 12px;
+    color: var(--text);
+  }
+  .quality-list{
+    columns: 2;
+    -webkit-columns: 2;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 0;
+    padding-left: 18px;
+  }
+  .quality-list li{ margin-bottom: 6px; break-inside: avoid; }
+  .quality-list b{ color: var(--text); font-family: var(--serif); font-weight: 500; }
+
+  footer{
+    border-top: 1px solid var(--border);
+    padding: 24px;
+    text-align:center;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  @media (max-width: 480px){
+    main{ padding: 36px 16px 60px; }
+    .card{ padding: 20px; }
+    .quality-list{ columns: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">tools/</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="index.html#tools">Tools</a>
+    <a href="index.html#about">About</a>
+    <a href="index.html#contact">Contact</a>
+  </nav>
+</header>
+
+<main>
+  <div class="keylines"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <h1>Klavier-Akkorde</h1>
+  <p class="subtitle">Akkord eingeben — sehen, welche Tasten du drückst, aus welchen Tönen er besteht, und welchen Ton du beim Singen oben behalten musst.</p>
+
+  <div class="card input-card">
+    <label for="chordInput">Akkord</label>
+    <input type="text" id="chordInput" autocomplete="off" spellcheck="false" placeholder="z. B. C, Dm7, G7, F#maj7, Bbsus4" value="Cmaj7">
+    <div class="presets" id="presets"></div>
+    <div class="hint" id="hint"></div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none;">
+    <div class="result-head">
+      <div>
+        <span class="chord-name" id="chordName"></span>
+        <span class="chord-quality" id="chordQuality"></span>
+      </div>
+    </div>
+
+    <div class="tones" id="toneChips"></div>
+
+    <div class="voicing-row">
+      <label style="margin:0;" for="topSelect">Oberster Ton (der, den du singst)</label>
+      <select id="topSelect"></select>
+    </div>
+    <div class="voicing-note" id="voicingNote"></div>
+
+    <div class="keyboard-wrap">
+      <div class="keyboard" id="keyboard"></div>
+    </div>
+
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--key-white-hi)"></span> Akkordton</span>
+      <span><span class="swatch" style="background:var(--felt)"></span> gesungener Ton (oberster Ton)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Notenbezeichnung: H und B</h2>
+    <p class="hint" style="margin-top:0;">Dieses Tool rechnet mit der englischen Schreibweise. Das deutsche <b>H</b> tippst du als <b>B</b> ein — <b>H</b> funktioniert aber auch direkt, es wird automatisch erkannt. Das deutsche <b>B</b> tippst du als <b>Bb</b> ein.</p>
+  </div>
+
+  <div class="card">
+    <h2>Unterstützte Akkordtypen</h2>
+    <ul class="quality-list">
+      <li><b>C</b> — Dur</li>
+      <li><b>Cm</b> / Cmin — Moll</li>
+      <li><b>C5</b> — Powerchord</li>
+      <li><b>Csus2</b> / Csus4 — Suspended</li>
+      <li><b>Caug</b> / C+ — Übermäßig</li>
+      <li><b>Cdim</b> — Vermindert</li>
+      <li><b>C6</b> / Cm6 — Sexte</li>
+      <li><b>C7</b> — Dominant-Septakkord</li>
+      <li><b>Cmaj7</b> — Großer Septakkord</li>
+      <li><b>Cm7</b> — Moll-Septakkord</li>
+      <li><b>Cm7b5</b> — Halbvermindert</li>
+      <li><b>Cdim7</b> — Verminderter Septakkord</li>
+      <li><b>C9</b> / Cmaj9 / Cm9 — None</li>
+      <li><b>Cadd9</b> — Hinzugefügte None</li>
+    </ul>
+  </div>
+</main>
+
+<footer>Klavier-Akkorde · Alle Berechnungen lokal im Browser · Keine Daten werden gespeichert</footer>
+
+<script>
+(function(){
+
+  const NAME_TO_PC = {
+    'C':0,'B#':0,
+    'C#':1,'Db':1,
+    'D':2,
+    'D#':3,'Eb':3,
+    'E':4,'Fb':4,
+    'F':5,'E#':5,
+    'F#':6,'Gb':6,
+    'G':7,
+    'G#':8,'Ab':8,
+    'A':9,
+    'A#':10,'Bb':10,
+    'B':11,'Cb':11
+  };
+  const SHARP_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const FLAT_NAMES  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+
+  // each quality: id, suffixShown, fullName, tones:[{semi, label}]
+  const Q = {
+    major:  { name:'Dur',                 tones:[[0,'Grundton'],[4,'große Terz'],[7,'Quinte']] },
+    minor:  { name:'Moll',                tones:[[0,'Grundton'],[3,'kleine Terz'],[7,'Quinte']] },
+    five:   { name:'Powerchord',          tones:[[0,'Grundton'],[7,'Quinte']] },
+    sus2:   { name:'Sus2',                tones:[[0,'Grundton'],[2,'große None'],[7,'Quinte']] },
+    sus4:   { name:'Sus4',                tones:[[0,'Grundton'],[5,'Quarte'],[7,'Quinte']] },
+    aug:    { name:'Übermäßig',           tones:[[0,'Grundton'],[4,'große Terz'],[8,'übermäßige Quinte']] },
+    dim:    { name:'Vermindert',          tones:[[0,'Grundton'],[3,'kleine Terz'],[6,'verminderte Quinte']] },
+    six:    { name:'Sexte',               tones:[[0,'Grundton'],[4,'große Terz'],[7,'Quinte'],[9,'Sexte']] },
+    m6:     { name:'Moll-Sexte',          tones:[[0,'Grundton'],[3,'kleine Terz'],[7,'Quinte'],[9,'Sexte']] },
+    dom7:   { name:'Dominant-Septakkord', tones:[[0,'Grundton'],[4,'große Terz'],[7,'Quinte'],[10,'kleine Septime']] },
+    maj7:   { name:'Großer Septakkord',   tones:[[0,'Grundton'],[4,'große Terz'],[7,'Quinte'],[11,'große Septime']] },
+    m7:     { name:'Moll-Septakkord',     tones:[[0,'Grundton'],[3,'kleine Terz'],[7,'Quinte'],[10,'kleine Septime']] },
+    m7b5:   { name:'Halbvermindert',      tones:[[0,'Grundton'],[3,'kleine Terz'],[6,'verminderte Quinte'],[10,'kleine Septime']] },
+    dim7:   { name:'Verminderter Septakkord', tones:[[0,'Grundton'],[3,'kleine Terz'],[6,'verminderte Quinte'],[9,'verminderte Septime']] },
+    dom9:   { name:'None (Dominant)',     tones:[[0,'Grundton'],[4,'große Terz'],[7,'Quinte'],[10,'kleine Septime'],[14,'None']] },
+    maj9:   { name:'Große None',          tones:[[0,'Grundton'],[4,'große Terz'],[7,'Quinte'],[11,'große Septime'],[14,'None']] },
+    m9:     { name:'Moll-None',           tones:[[0,'Grundton'],[3,'kleine Terz'],[7,'Quinte'],[10,'kleine Septime'],[14,'None']] },
+    add9:   { name:'Hinzugefügte None',   tones:[[0,'Grundton'],[4,'große Terz'],[7,'Quinte'],[14,'None']] }
+  };
+
+  function matchQuality(rest){
+    const s = rest.trim().replace(/Δ/g,'maj').replace(/°/g,'dim').replace(/ø/g,'m7b5');
+    if (s === '') return Q.major;
+    if (/^(maj7|M7)$/.test(s)) return Q.maj7;
+    if (/^(maj9|M9)$/.test(s)) return Q.maj9;
+    if (/^(m7b5|m7-5|halfdim)$/i.test(s)) return Q.m7b5;
+    if (/^(dim7)$/i.test(s)) return Q.dim7;
+    if (/^(dim|o)$/i.test(s)) return Q.dim;
+    if (/^(m9|min9)$/i.test(s)) return Q.m9;
+    if (/^(m7|min7)$/i.test(s)) return Q.m7;
+    if (/^(m6|min6)$/i.test(s)) return Q.m6;
+    if (/^(m|min|minor|-)$/i.test(s)) return Q.minor;
+    if (/^(add9)$/i.test(s)) return Q.add9;
+    if (/^(9)$/.test(s)) return Q.dom9;
+    if (/^(7)$/.test(s)) return Q.dom7;
+    if (/^(6)$/.test(s)) return Q.six;
+    if (/^(aug|\+)$/i.test(s)) return Q.aug;
+    if (/^(sus2)$/i.test(s)) return Q.sus2;
+    if (/^(sus4|sus)$/i.test(s)) return Q.sus4;
+    if (/^(5)$/.test(s)) return Q.five;
+    return null;
+  }
+
+  function parseChord(input){
+    const s = (input || '').trim();
+    if (!s) return { error: 'leer' };
+    const rootMatch = s.match(/^[A-Ha-h](#|b)?/);
+    if (!rootMatch) return { error: 'Grundton nicht erkannt (A–H erwartet)' };
+    const rootRaw = rootMatch[0];
+    const rest = s.slice(rootRaw.length).trim();
+    let letter = rootRaw[0].toUpperCase();
+    let acc = rootRaw[1] || '';
+    if (letter === 'H') letter = 'B'; // German H -> English B
+    const rootName = letter + acc;
+    const rootPc = NAME_TO_PC[rootName];
+    if (rootPc === undefined) return { error: 'unbekannter Grundton "' + rootName + '"' };
+    const quality = matchQuality(rest);
+    if (!quality) return { error: 'Akkordtyp "' + rest + '" nicht erkannt' };
+    const useFlat = acc === 'b';
+    const names = useFlat ? FLAT_NAMES : SHARP_NAMES;
+    const tones = quality.tones.map(function(t){
+      const pc = (rootPc + t[0]) % 12;
+      return { semi: t[0], label: t[1], pc: pc, name: names[pc] };
+    });
+    return {
+      rootPc: rootPc, rootName: names[rootPc], quality: quality, tones: tones,
+      displayName: names[rootPc] + (rest || '')
+    };
+  }
+
+  function buildVoicing(chord, topSemi){
+    const baseAbs = 4*12 + chord.rootPc;
+    let notes = chord.tones.map(function(t){
+      return { semi: t.semi, label: t.label, pc: t.pc, name: t.name, abs: baseAbs + t.semi, isTop:false };
+    });
+    if (topSemi !== null){
+      const others = notes.filter(function(n){ return n.semi !== topSemi; }).map(function(n){ return n.abs; });
+      const maxOther = others.length ? Math.max.apply(null, others) : -Infinity;
+      const target = notes.find(function(n){ return n.semi === topSemi; });
+      while (target.abs <= maxOther) target.abs += 12;
+      target.isTop = true;
+    } else {
+      // default close voicing: highest interval is naturally the top
+      let maxAbs = Math.max.apply(null, notes.map(function(n){return n.abs;}));
+      notes.forEach(function(n){ if (n.abs === maxAbs) n.isTop = true; });
+    }
+    notes.sort(function(a,b){ return a.abs - b.abs; });
+    return notes;
+  }
+
+  const WHITE_PCS = [0,2,4,5,7,9,11];
+  const WHITE_OFFSET = { 0:0, 2:1, 4:2, 5:3, 7:4, 9:5, 11:6 };
+  const BLACK_PCS = [1,3,6,8,10];
+  // position of black key center as fraction between white keys, per pc
+  const BLACK_OFFSET = { 1:0.68, 3:1.68, 6:3.62, 8:4.65, 10:5.68 };
+
+  function renderKeyboard(container, notes){
+    container.innerHTML = '';
+    const absVals = notes.map(function(n){ return n.abs; });
+    let minOct = Math.floor(Math.min.apply(null, absVals) / 12) - 1;
+    let maxOct = Math.floor(Math.max.apply(null, absVals) / 12) + 1;
+    if (maxOct - minOct > 5) maxOct = minOct + 5;
+    const octaves = [];
+    for (let o = minOct; o <= maxOct; o++) octaves.push(o);
+
+    const WKW = 36; // white key width
+    const highlightMap = {};
+    notes.forEach(function(n){ highlightMap[n.abs] = n; });
+
+    let x = 0;
+    octaves.forEach(function(oct){
+      WHITE_PCS.forEach(function(pc){
+        const abs = oct*12 + pc;
+        const hi = highlightMap[abs];
+        const el = document.createElement('div');
+        el.className = 'wkey' + (hi ? ' hi' : '') + (hi && hi.isTop ? ' top' : '');
+        el.style.left = x + 'px';
+        const lbl = document.createElement('div');
+        lbl.className = 'klabel';
+        lbl.textContent = hi ? hi.name : '';
+        el.appendChild(lbl);
+        if (pc === 0){
+          const cm = document.createElement('div');
+          cm.className = 'cmark';
+          cm.textContent = 'C' + oct;
+          el.appendChild(cm);
+        }
+        container.appendChild(el);
+        x += WKW;
+      });
+    });
+    container.style.width = x + 'px';
+
+    let bx = 0;
+    octaves.forEach(function(oct){
+      BLACK_PCS.forEach(function(pc){
+        const abs = oct*12 + pc;
+        const hi = highlightMap[abs];
+        const el = document.createElement('div');
+        el.className = 'bkey' + (hi ? ' hi' : '') + (hi && hi.isTop ? ' top' : '');
+        el.style.left = (bx + BLACK_OFFSET[pc]*WKW - 11) + 'px';
+        const lbl = document.createElement('div');
+        lbl.className = 'klabel';
+        lbl.textContent = hi ? hi.name : '';
+        el.appendChild(lbl);
+        container.appendChild(el);
+      });
+      bx += WKW*7;
+    });
+  }
+
+  const input = document.getElementById('chordInput');
+  const hint = document.getElementById('hint');
+  const resultCard = document.getElementById('resultCard');
+  const chordName = document.getElementById('chordName');
+  const chordQuality = document.getElementById('chordQuality');
+  const toneChips = document.getElementById('toneChips');
+  const topSelect = document.getElementById('topSelect');
+  const voicingNote = document.getElementById('voicingNote');
+  const keyboard = document.getElementById('keyboard');
+
+  let currentChord = null;
+
+  function renderChord(){
+    const parsed = parseChord(input.value);
+    if (parsed.error){
+      input.classList.add('invalid');
+      hint.textContent = parsed.error === 'leer' ? '' : 'Nicht erkannt: ' + parsed.error;
+      hint.className = 'hint' + (parsed.error === 'leer' ? '' : ' error');
+      resultCard.style.display = 'none';
+      currentChord = null;
+      return;
+    }
+    input.classList.remove('invalid');
+    hint.textContent = '';
+    hint.className = 'hint';
+    currentChord = parsed;
+    resultCard.style.display = '';
+
+    chordName.textContent = parsed.displayName;
+    chordQuality.textContent = parsed.quality.name;
+
+    toneChips.innerHTML = '';
+    parsed.tones.forEach(function(t){
+      const chip = document.createElement('div');
+      chip.className = 'tone-chip';
+      chip.innerHTML = '<span class="note">' + t.name + '</span><span class="role">' + t.label + '</span>';
+      toneChips.appendChild(chip);
+    });
+
+    const prevValue = topSelect.value;
+    topSelect.innerHTML = '';
+    const autoOpt = document.createElement('option');
+    autoOpt.value = 'auto';
+    autoOpt.textContent = 'Automatisch (engste Lage)';
+    topSelect.appendChild(autoOpt);
+    parsed.tones.forEach(function(t){
+      const opt = document.createElement('option');
+      opt.value = t.semi;
+      opt.textContent = t.name + ' — ' + t.label;
+      topSelect.appendChild(opt);
+    });
+    const stillValid = Array.from(topSelect.options).some(function(o){ return o.value === prevValue; });
+    topSelect.value = stillValid ? prevValue : 'auto';
+
+    updateVoicing();
+  }
+
+  function updateVoicing(){
+    if (!currentChord) return;
+    const val = topSelect.value;
+    const topSemi = val === 'auto' ? null : parseInt(val, 10);
+    const notes = buildVoicing(currentChord, topSemi);
+    renderKeyboard(keyboard, notes);
+    if (topSemi === null){
+      voicingNote.textContent = 'Engste Lage: alle Töne liegen so eng wie möglich übereinander, direkt über dem Grundton.';
+    } else {
+      const top = notes.find(function(n){ return n.isTop; });
+      voicingNote.textContent = 'Der Ton ' + top.name + ' (' + top.label + ') wird eine Oktave nach oben verschoben, bis er der höchste Ton im Akkord ist — genau der Ton, den du singst.';
+    }
+  }
+
+  input.addEventListener('input', renderChord);
+  topSelect.addEventListener('change', updateVoicing);
+
+  const presets = ['C', 'G', 'Am', 'F', 'Dm7', 'G7', 'Cmaj7', 'Em', 'Fmaj7', 'Bbsus4'];
+  const presetsEl = document.getElementById('presets');
+  presets.forEach(function(p){
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.type = 'button';
+    btn.textContent = p;
+    btn.addEventListener('click', function(){
+      input.value = p;
+      renderChord();
+      input.focus();
+    });
+    presetsEl.appendChild(btn);
+  });
+
+  renderChord();
+})();
+</script>
+
+</body>
+</html>
