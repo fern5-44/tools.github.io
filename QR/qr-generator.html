@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR-Code-Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
+  <meta name="theme-color" content="#f5f5f3" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      margin: 0;
+      padding: calc(50px + 2rem) 1rem 3rem;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 500;
+      margin: 0 0 1.5rem;
+    }
+    label {
+      font-size: 12px;
+      color: #666;
+      display: block;
+      margin-bottom: 4px;
+    }
+    input[type=text], input[type=password], input[type=email], input[type=tel],
+    input[type=url], select, textarea {
+      width: 100%;
+      font-size: 14px;
+      font-family: inherit;
+      padding: 7px 10px;
+      border: 0.5px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a18;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #888; }
+    textarea {
+      resize: vertical;
+      min-height: 56px;
+    }
+    .card {
+      background: #fff;
+      border: 0.5px solid #ddd;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 12px;
+    }
+    .card-num {
+      font-size: 12px;
+      font-weight: 500;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .full { grid-column: 1 / -1; }
+
+    /* Typ-Auswahl */
+    .types { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.25rem; }
+    .types input { position: absolute; opacity: 0; pointer-events: none; }
+    .types label {
+      font-size: 13px;
+      color: #666;
+      margin: 0;
+      padding: 6px 13px;
+      border: 0.5px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+    .types label:hover { background: #f0f0ee; }
+    .types input:checked + label {
+      background: #e6f1fb;
+      color: #185fa5;
+      border-color: transparent;
+      font-weight: 500;
+    }
+    .types input:focus-visible + label { border-color: #888; }
+
+    .panel { display: none; }
+    .panel.on { display: grid; }
+    .checkrow { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; }
+    .checkrow input { width: 15px; height: 15px; accent-color: #185fa5; margin: 0; }
+
+    .slider { display: flex; align-items: center; gap: 10px; }
+    .slider input[type=range] { flex: 1; accent-color: #185fa5; min-width: 0; }
+    .slider output {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: #888;
+      min-width: 5.5ch;
+      text-align: right;
+    }
+    .swatch { display: flex; align-items: center; gap: 8px; }
+    input[type=color] {
+      width: 40px;
+      height: 32px;
+      padding: 2px;
+      border: 0.5px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    /* Vorschau */
+    .stage {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      padding: 14px;
+      border: 0.5px solid #eee;
+      border-radius: 8px;
+      background: #fbfbfa;
+    }
+    #canvas { display: block; width: 100%; max-width: 240px; height: auto; image-rendering: pixelated; }
+    #canvas[hidden] { display: none; }
+    .stage p { margin: 0; font-size: 13px; color: #999; text-align: center; max-width: 30ch; }
+    .meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: #888;
+      margin: 12px 0 14px;
+      min-height: 2.4em;
+    }
+    .meta.alert { color: #a85400; }
+
+    button {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 0.5px solid #ccc;
+      background: #fff;
+      color: #1a1a18;
+      transition: background 0.1s;
+    }
+    button:hover { background: #f0f0ee; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button:disabled:hover { background: #fff; }
+    .actions { display: flex; gap: 8px; }
+    .dl-btn {
+      flex: 1;
+      font-size: 15px;
+      padding: 10px;
+      background: #e6f1fb;
+      color: #185fa5;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .dl-btn:hover { background: #cce0f5; }
+    .dl-btn:disabled:hover { background: #e6f1fb; }
+    .hint {
+      font-size: 12px;
+      color: #888;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    /* ── Shared nav chrome ── */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:400; }
+    .overlay.show { display:block; }
+    .sidenav { height:100%; width:0; position:fixed; z-index:500; top:0; left:0; background:#fff; border-right:0.5px solid #e2e2df; overflow-x:hidden; transition:width .25s cubic-bezier(.4,0,.2,1); padding-top:64px; box-shadow:2px 0 24px rgba(0,0,0,.05); }
+    .sidenav.open { width:240px; }
+    .sidenav-label { padding:1.1rem 28px 4px; font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:#185fa5; opacity:.85; }
+    .sidenav a { display:block; padding:9px 28px; font-family:'DM Mono',monospace; font-size:13px; color:#888; text-decoration:none; letter-spacing:.02em; white-space:nowrap; transition:color .12s, padding-left .12s; }
+    .sidenav a:hover { color:#1a1a18; padding-left:32px; }
+    .sidenav a.active { color:#185fa5; }
+    .sidenav .closebtn { position:absolute; top:16px; right:18px; font-family:'DM Mono',monospace; font-size:13px; color:#888; cursor:pointer; background:none; border:none; padding:0; transition:color .12s; }
+    .sidenav .closebtn:hover { color:#185fa5; }
+    .topnav { position:fixed; top:0; left:0; right:0; height:50px; z-index:300; display:flex; align-items:center; padding:0 2rem; background:rgba(245,245,243,.85); backdrop-filter:blur(12px); border-bottom:0.5px solid #e2e2df; }
+    .nav-logo { font-family:'DM Mono',monospace; font-size:12px; color:#185fa5; text-decoration:none; letter-spacing:.08em; opacity:.9; margin-right:auto; }
+    .topnav-links { display:flex; list-style:none; align-items:center; gap:2px; margin:0; padding:0; }
+    .topnav-links a { font-family:'DM Mono',monospace; font-size:11px; color:#888; text-decoration:none; padding:5px 12px; border-radius:5px; letter-spacing:.04em; transition:color .15s; }
+    .topnav-links a:hover { color:#1a1a18; }
+    .hamburger { display:flex; flex-direction:column; gap:5px; cursor:pointer; padding:6px; background:none; border:none; margin-left:8px; }
+    .hamburger:hover { background:none; }
+    .hamburger span { display:block; width:18px; height:1px; background:#999; transition:transform .2s, opacity .2s, background .12s; }
+    .hamburger:hover span { background:#185fa5; }
+    .hamburger.open span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
+    .hamburger.open span:nth-child(2){ opacity:0; }
+    .hamburger.open span:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: 1fr; }
+      .full { grid-column: 1; }
+      .topnav { padding: 0 1.25rem; }
+      .topnav-links { display:none; }
+      .actions { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeNav()"></div>
+<div class="sidenav" id="sidenav">
+  <button class="closebtn" onclick="closeNav()">[ close ]</button>
+  <div class="sidenav-label">Pages</div>
+  <a href="index.html">Home</a>
+  <a href="index.html#tools">Tools</a>
+  <a href="index.html#about">About</a>
+  <a href="index.html#contact">Contact</a>
+</div>
+<nav class="topnav">
+  <a href="index.html" class="nav-logo">tools/</a>
+  <ul class="topnav-links">
+    <li><a href="index.html#tools">tools</a></li>
+    <li><a href="index.html#about">about</a></li>
+    <li><a href="index.html#contact">contact</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" onclick="toggleNav()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="container">
+  <h1>QR-Code-Generator</h1>
+
+  <div class="types" role="radiogroup" aria-label="Art des Inhalts">
+    <input type="radio" name="type" id="t-text" value="text" checked /><label for="t-text">Text / Link</label>
+    <input type="radio" name="type" id="t-wifi" value="wifi" /><label for="t-wifi">WLAN</label>
+    <input type="radio" name="type" id="t-card" value="card" /><label for="t-card">Kontakt</label>
+    <input type="radio" name="type" id="t-mail" value="mail" /><label for="t-mail">E-Mail</label>
+    <input type="radio" name="type" id="t-sms" value="sms" /><label for="t-sms">SMS</label>
+  </div>
+
+  <div class="card">
+    <div class="card-num">Inhalt</div>
+
+    <div class="panel grid on" data-panel="text">
+      <div class="full">
+        <label>Text oder Link</label>
+        <textarea id="f-text" placeholder="https://example.com"></textarea>
+      </div>
+    </div>
+
+    <div class="panel grid" data-panel="wifi">
+      <div class="full">
+        <label>Netzwerkname (SSID) *</label>
+        <input type="text" id="f-ssid" autocomplete="off" />
+      </div>
+      <div>
+        <label>Passwort</label>
+        <input type="text" id="f-wpass" autocomplete="off" />
+      </div>
+      <div>
+        <label>Verschlüsselung</label>
+        <select id="f-wenc">
+          <option value="WPA">WPA / WPA2 / WPA3</option>
+          <option value="WEP">WEP</option>
+          <option value="nopass">Offen, kein Passwort</option>
+        </select>
+      </div>
+      <div class="full checkrow">
+        <input type="checkbox" id="f-whidden" /> <label for="f-whidden" style="margin:0">Netzwerk ist versteckt</label>
+      </div>
+    </div>
+
+    <div class="panel grid" data-panel="card">
+      <div>
+        <label>Name</label>
+        <input type="text" id="f-cname" placeholder="z.B. Anna Muster" />
+      </div>
+      <div>
+        <label>Firma</label>
+        <input type="text" id="f-corg" />
+      </div>
+      <div>
+        <label>Telefon</label>
+        <input type="tel" id="f-ctel" />
+      </div>
+      <div>
+        <label>E-Mail</label>
+        <input type="email" id="f-cmail" />
+      </div>
+      <div class="full">
+        <label>Website</label>
+        <input type="url" id="f-curl" placeholder="https://" />
+      </div>
+    </div>
+
+    <div class="panel grid" data-panel="mail">
+      <div class="full">
+        <label>Empfänger *</label>
+        <input type="email" id="f-maddr" />
+      </div>
+      <div class="full">
+        <label>Betreff</label>
+        <input type="text" id="f-msubj" />
+      </div>
+      <div class="full">
+        <label>Nachricht</label>
+        <textarea id="f-mbody"></textarea>
+      </div>
+    </div>
+
+    <div class="panel grid" data-panel="sms">
+      <div class="full">
+        <label>Nummer *</label>
+        <input type="tel" id="f-snum" placeholder="+41 …" />
+      </div>
+      <div class="full">
+        <label>Nachricht</label>
+        <textarea id="f-stext"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-num">Darstellung</div>
+    <div class="grid">
+      <div>
+        <label>Bildgrösse</label>
+        <div class="slider">
+          <input type="range" id="o-size" min="128" max="1024" step="32" value="512" />
+          <output id="o-size-out">512 px</output>
+        </div>
+      </div>
+      <div>
+        <label>Weisser Rand</label>
+        <div class="slider">
+          <input type="range" id="o-margin" min="0" max="8" step="1" value="4" />
+          <output id="o-margin-out">4</output>
+        </div>
+      </div>
+      <div>
+        <label>Fehlerkorrektur</label>
+        <select id="o-ec">
+          <option value="L">L – 7 % wiederherstellbar</option>
+          <option value="M" selected>M – 15 %</option>
+          <option value="Q">Q – 25 %</option>
+          <option value="H">H – 30 %</option>
+        </select>
+      </div>
+      <div>
+        <label>Farben</label>
+        <div class="swatch">
+          <input type="color" id="o-fg" value="#1a1a18" aria-label="Farbe der Module" />
+          <input type="color" id="o-bg" value="#ffffff" aria-label="Hintergrundfarbe" />
+          <button type="button" id="o-swap" style="padding:7px 12px;font-size:13px">Tauschen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-num">Vorschau</div>
+    <div class="stage">
+      <canvas id="canvas" hidden></canvas>
+      <p id="placeholder">Sobald du etwas eingibst, erscheint der Code hier.</p>
+    </div>
+    <p class="meta" id="meta"></p>
+    <div class="actions">
+      <button type="button" class="dl-btn" id="dl-png" disabled>PNG herunterladen</button>
+      <button type="button" id="dl-svg" disabled>SVG</button>
+      <button type="button" id="copy" disabled>Kopieren</button>
+    </div>
+  </div>
+
+  <p class="hint">Vor dem Drucken einmal mit der Handykamera testen. Faustregel: Leseabstand ÷ 10 = Kantenlänge.</p>
+</div>
+
+<script src="qrcode.js"></script>
+<script>
+  // Service Worker: macht die Seite nach dem ersten Besuch offline verfügbar.
+  // Läuft nur über http/https, nicht über file://
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+</script>
+<script>
+  function toggleNav(){var s=document.getElementById('sidenav'),o=document.getElementById('overlay'),b=document.getElementById('hamburger');var open=s.classList.contains('open');s.classList.toggle('open',!open);o.classList.toggle('show',!open);b.classList.toggle('open',!open);}
+  function closeNav(){document.getElementById('sidenav').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.getElementById('hamburger').classList.remove('open');}
+</script>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const canvas = $('#canvas');
+  const ctx = canvas.getContext('2d');
+  const placeholder = $('#placeholder');
+  const meta = $('#meta');
+  const btnPng = $('#dl-png'), btnSvg = $('#dl-svg'), btnCopy = $('#copy');
+
+  let state = null;
+
+  if (typeof qrcode === 'undefined') {
+    placeholder.textContent = 'qrcode.js fehlt. Die Datei muss im selben Ordner wie diese Seite liegen.';
+    return;
+  }
+  try { qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8']; } catch (e) {}
+
+  const escWifi = (s) => s.replace(/([\\;,:"])/g, '\\$1');
+  const val = (id) => $(id).value.trim();
+
+  function buildPayload() {
+    const type = document.querySelector('input[name="type"]:checked').value;
+
+    if (type === 'text') return val('#f-text');
+
+    if (type === 'wifi') {
+      const ssid = val('#f-ssid');
+      if (!ssid) return '';
+      const enc = $('#f-wenc').value, pass = $('#f-wpass').value;
+      let out = 'WIFI:T:' + enc + ';S:' + escWifi(ssid) + ';';
+      if (enc !== 'nopass' && pass) out += 'P:' + escWifi(pass) + ';';
+      if ($('#f-whidden').checked) out += 'H:true;';
+      return out + ';';
+    }
+
+    if (type === 'card') {
+      const name = val('#f-cname'), org = val('#f-corg'), tel = val('#f-ctel'),
+            mail = val('#f-cmail'), url = val('#f-curl');
+      if (!(name || org || tel || mail || url)) return '';
+      const parts = ['BEGIN:VCARD', 'VERSION:3.0'];
+      if (name) {
+        const bits = name.split(/\s+/);
+        parts.push('N:' + bits.slice(-1) + ';' + bits.slice(0, -1).join(' ') + ';;;');
+        parts.push('FN:' + name);
+      }
+      if (org) parts.push('ORG:' + org);
+      if (tel) parts.push('TEL;TYPE=CELL:' + tel);
+      if (mail) parts.push('EMAIL:' + mail);
+      if (url) parts.push('URL:' + url);
+      parts.push('END:VCARD');
+      return parts.join('\n');
+    }
+
+    if (type === 'mail') {
+      const addr = val('#f-maddr');
+      if (!addr) return '';
+      const q = [];
+      if (val('#f-msubj')) q.push('subject=' + encodeURIComponent(val('#f-msubj')));
+      if (val('#f-mbody')) q.push('body=' + encodeURIComponent(val('#f-mbody')));
+      return 'mailto:' + addr + (q.length ? '?' + q.join('&') : '');
+    }
+
+    if (type === 'sms') {
+      const num = val('#f-snum').replace(/\s+/g, '');
+      if (!num) return '';
+      const msg = val('#f-stext');
+      return 'SMSTO:' + num + (msg ? ':' + msg : '');
+    }
+    return '';
+  }
+
+  function luminance(hex) {
+    const c = [1, 3, 5].map((i) => {
+      const v = parseInt(hex.substr(i, 2), 16) / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  function contrast(a, b) {
+    const l1 = luminance(a), l2 = luminance(b);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+
+  function idle(msg) {
+    state = null;
+    canvas.hidden = true;
+    placeholder.hidden = false;
+    placeholder.textContent = msg;
+    meta.textContent = '';
+    meta.className = 'meta';
+    [btnPng, btnSvg, btnCopy].forEach((b) => (b.disabled = true));
+  }
+
+  function render() {
+    const data = buildPayload();
+    const fg = $('#o-fg').value, bg = $('#o-bg').value;
+    const margin = +$('#o-margin').value;
+    const size = +$('#o-size').value;
+
+    $('#o-size-out').textContent = size + ' px';
+    $('#o-margin-out').textContent = margin;
+
+    if (!data) return idle('Sobald du etwas eingibst, erscheint der Code hier.');
+
+    let qr;
+    try {
+      qr = qrcode(0, $('#o-ec').value);
+      qr.addData(data, 'Byte');
+      qr.make();
+    } catch (err) {
+      return idle('Der Inhalt ist zu lang für einen QR-Code. Text kürzen oder niedrigere Fehlerkorrektur wählen.');
+    }
+
+    const count = qr.getModuleCount();
+    const total = count + margin * 2;
+    const cell = Math.max(1, Math.floor(size / total));
+    const px = cell * total;
+
+    canvas.width = px;
+    canvas.height = px;
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, px, px);
+    ctx.fillStyle = fg;
+    for (let r = 0; r < count; r++) {
+      for (let c = 0; c < count; c++) {
+        if (qr.isDark(r, c)) ctx.fillRect((c + margin) * cell, (r + margin) * cell, cell, cell);
+      }
+    }
+
+    canvas.hidden = false;
+    placeholder.hidden = true;
+    state = { qr, count, margin, fg, bg };
+    [btnPng, btnSvg, btnCopy].forEach((b) => (b.disabled = false));
+
+    let text = 'Version ' + ((count - 17) / 4) + ' · ' + count + '×' + count + ' Module · ' +
+               data.length + ' Zeichen · ' + px + ' px';
+    if (contrast(fg, bg) < 3) {
+      text += '\nKontrast zu gering – viele Scanner erkennen den Code so nicht.';
+      meta.className = 'meta alert';
+    } else if (margin < 2) {
+      text += '\nRand von mindestens 2 Modulen empfohlen.';
+      meta.className = 'meta alert';
+    } else {
+      meta.className = 'meta';
+    }
+    meta.style.whiteSpace = 'pre-line';
+    meta.textContent = text;
+  }
+
+  function svgString() {
+    const { qr, count, margin, fg, bg } = state;
+    const total = count + margin * 2;
+    let d = '';
+    for (let r = 0; r < count; r++)
+      for (let c = 0; c < count; c++)
+        if (qr.isDark(r, c)) d += 'M' + (c + margin) + ' ' + (r + margin) + 'h1v1h-1z';
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + total + ' ' + total +
+      '" width="' + total * 10 + '" height="' + total * 10 + '" shape-rendering="crispEdges">' +
+      '<rect width="' + total + '" height="' + total + '" fill="' + bg + '"/>' +
+      '<path d="' + d + '" fill="' + fg + '"/></svg>';
+  }
+
+  function save(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  btnPng.addEventListener('click', () => canvas.toBlob((b) => save(b, 'qr-code.png'), 'image/png'));
+  btnSvg.addEventListener('click', () => save(new Blob([svgString()], { type: 'image/svg+xml' }), 'qr-code.svg'));
+  btnCopy.addEventListener('click', async () => {
+    try {
+      const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      btnCopy.textContent = 'Kopiert';
+    } catch (e) {
+      btnCopy.textContent = 'Nicht möglich';
+    }
+    setTimeout(() => (btnCopy.textContent = 'Kopieren'), 1600);
+  });
+
+  document.querySelectorAll('input[name="type"]').forEach((r) =>
+    r.addEventListener('change', () => {
+      document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.dataset.panel === r.value));
+      render();
+    })
+  );
+  document.querySelectorAll('input, select, textarea').forEach((el) => {
+    el.addEventListener('input', render);
+    el.addEventListener('change', render);
+  });
+  $('#o-swap').addEventListener('click', () => {
+    const fg = $('#o-fg').value;
+    $('#o-fg').value = $('#o-bg').value;
+    $('#o-bg').value = fg;
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
