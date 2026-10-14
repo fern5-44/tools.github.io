@@ -47,14 +47,14 @@
     /* ── Shared nav chrome ── */
     .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:400; }
     .overlay.show { display:block; }
-    .sidenav { height:100%; width:0; position:fixed; z-index:500; top:0; left:0; background:var(--navy); border-right:0.5px solid rgba(237,242,250,.1); overflow-x:hidden; transition:width .25s cubic-bezier(.4,0,.2,1); padding-top:64px; }
+    .sidenav { height:100%; width:0; position:fixed; z-index:500; top:0; left:0; background:#091226; border-right:0.5px solid rgba(237,242,250,.1); overflow-x:hidden; transition:width .25s cubic-bezier(.4,0,.2,1); padding-top:64px; }
     .sidenav.open { width:240px; }
     .sidenav-label { padding:1.1rem 28px 4px; font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--blue-lt); opacity:.85; }
     .sidenav a { display:block; padding:9px 28px; font-family:var(--mono); font-size:13px; color:rgba(237,242,250,.5); text-decoration:none; letter-spacing:.02em; white-space:nowrap; transition:color .12s, padding-left .12s; }
     .sidenav a:hover { color:#EDF2FA; padding-left:32px; }
     .sidenav .closebtn { position:absolute; top:16px; right:18px; font-family:var(--mono); font-size:13px; color:rgba(237,242,250,.5); cursor:pointer; background:none; border:none; padding:0; transition:color .12s; }
     .sidenav .closebtn:hover { color:var(--blue-lt); }
-    .topnav { position:fixed; top:0; left:0; right:0; height:50px; z-index:300; display:flex; align-items:center; padding:0 2rem; background:rgba(19,37,74,.92); backdrop-filter:blur(12px); border-bottom:0.5px solid rgba(237,242,250,.1); }
+    .topnav { position:fixed; top:0; left:0; right:0; height:50px; z-index:300; display:flex; align-items:center; padding:0 2rem; background:rgba(9,18,38,.97); backdrop-filter:blur(12px); border-bottom:0.5px solid rgba(237,242,250,.1); }
     .nav-logo { font-family:var(--mono); font-size:12px; color:var(--blue-lt); text-decoration:none; letter-spacing:.08em; opacity:.9; margin-right:auto; }
     .topnav-links { display:flex; list-style:none; align-items:center; gap:2px; }
     .topnav-links a { font-family:var(--mono); font-size:11px; color:rgba(237,242,250,.5); text-decoration:none; padding:5px 12px; border-radius:5px; letter-spacing:.04em; transition:color .15s; }
@@ -69,27 +69,13 @@
     /* ── Page ── */
     .page-wrap { padding-top: 50px; min-height: 100vh; display: flex; flex-direction: column; }
 
-    /* Header: a ruled index card in navy */
-    .head {
-      background:
-        linear-gradient(to bottom, transparent 46px, rgba(143,181,242,.45) 46px, rgba(143,181,242,.45) 48px, transparent 48px),
-        repeating-linear-gradient(to bottom, transparent 0, transparent 27px, rgba(143,181,242,.08) 27px, rgba(143,181,242,.08) 28px),
-        linear-gradient(160deg, var(--navy-2) 0%, var(--navy) 100%);
-      padding: 2.9rem 2rem 2.6rem;
-    }
-    .head-inner { max-width: 760px; margin: 0 auto; }
-    .head-eyebrow {
-      font-size: 0.68rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
-      color: var(--blue-lt); margin-bottom: 14px; opacity: 0.85;
-    }
-    .head-title {
-      font-family: var(--display); font-size: clamp(1.9rem, 4.5vw, 2.8rem); font-weight: 600;
-      line-height: 1.12; letter-spacing: -0.01em; color: #EDF2FA; margin-bottom: 10px;
-    }
-    .head-title em { font-style: italic; font-weight: 400; color: var(--blue-lt); }
-    .head-sub { font-size: 0.875rem; color: rgba(237,242,250,0.55); max-width: 480px; line-height: 1.65; }
+    /* Compact intro: title sits on the page, underlined by the blue head-line of an index card */
+    .intro { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(46,107,216,.55); display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .intro-title { font-family: var(--display); font-size: clamp(1.5rem, 3.4vw, 2rem); font-weight: 600; line-height: 1.15; color: var(--ink); }
+    .intro-title em { font-style: italic; font-weight: 400; color: var(--blue); }
+    .intro-sub { font-size: 0.82rem; color: var(--muted); max-width: 340px; line-height: 1.55; }
 
-    main { padding: 2.2rem 1.5rem 5rem; max-width: 760px; margin: 0 auto; width: 100%; flex: 1; }
+    main { padding: 2rem 1.5rem 5rem; max-width: 760px; margin: 0 auto; width: 100%; flex: 1; }
 
     .section-label {
       font-size: 0.67rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
@@ -338,7 +324,6 @@
     @media (max-width: 600px) {
       .topnav { padding: 0 1.25rem; }
       .topnav-links { display: none; }
-      .head { padding: 2.2rem 1.25rem 2rem; }
       main { padding-left: 1.25rem; padding-right: 1.25rem; }
       .learn-opts { grid-template-columns: 1fr; }
       .fc-face { min-height: 260px; padding: 4.25rem 1.25rem 2.5rem; }
@@ -378,15 +363,12 @@
 
 <div class="page-wrap">
 
-  <header class="head">
-    <div class="head-inner">
-      <p class="head-eyebrow">Learning tool · Flashcards</p>
-      <h1 class="head-title">Flashcards from <em>your own lists</em></h1>
-      <p class="head-sub">Paste a word list or drop a PDF, study the cards, then download your progress as an Excel file. Upload it next time and you pick up exactly where you left off.</p>
-    </div>
-  </header>
-
   <main id="app">
+
+    <div class="intro">
+      <h1 class="intro-title">Flashcards <em>from your lists</em></h1>
+      <p class="intro-sub">Paste words or drop a PDF, learn, and save your progress as Excel to continue later.</p>
+    </div>
 
     <!-- ═════════ CREATE ═════════ -->
     <div class="view" id="v-create">
