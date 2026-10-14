@@ -368,12 +368,12 @@
   <div class="capo-section">
     <span class="field-label">Capo-Position</span>
     <div class="capo-display">
-      <span class="capo-num" id="capoNum">1</span>
-      <span class="capo-unit">Bund</span>
+      <span class="capo-num" id="capoNum">0</span>
+      <span class="capo-unit" id="capoUnit">ohne Capo</span>
     </div>
-    <input type="range" id="capoSlider" min="1" max="7" value="1" step="1" aria-label="Capo-Bund wählen">
+    <input type="range" id="capoSlider" min="0" max="7" value="0" step="1" aria-label="Capo-Bund wählen">
     <div class="fret-marks">
-      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+      <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
     </div>
   </div>
 
@@ -414,7 +414,7 @@
   <section class="block">
     <div class="circle-section">
       <h2 class="block-title">Akkord-Kreis</h2>
-      <p class="block-sub">So wird oben gerechnet: jeder Capo-Bund dreht den Akkord um einen Halbton nach unten.</p>
+      <p class="block-sub">So wird oben gerechnet: jeder Capo-Bund dreht den Akkord um einen Halbton nach unten. Ohne Capo bleibt alles, wie es ist.</p>
       <div class="circle-wrap">
         <svg class="chord-circle" id="chordCircle" viewBox="0 0 340 340" role="img" aria-label="Chromatischer Akkord-Kreis"></svg>
       </div>
@@ -636,6 +636,14 @@ function buildCircle() {
 }
 
 function drawArc(soundIdx, capo, color, opacity) {
+  // Markierung an der Lied-Note (Start, gefüllt + weißer Ring)
+  const [sx, sy] = pt(soundIdx, DOT_R);
+  const marker = el('circle', { cx: sx, cy: sy, r: 12, fill: color,
+    stroke: '#F5EFE6', 'stroke-width': 2, opacity: opacity });
+
+  // ohne Capo: kein Pfeil, nur die Note markieren
+  if (capo === 0) { arcLayer.appendChild(marker); return; }
+
   // glatte Bahn von Lied-Note (soundIdx) Halbton für Halbton nach unten
   const steps = capo * 3;
   let d = '';
@@ -648,10 +656,7 @@ function drawArc(soundIdx, capo, color, opacity) {
   arcLayer.appendChild(el('path', { d: d.trim(), fill: 'none', stroke: color,
     'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: opacity }));
 
-  // Markierung an der Lied-Note (Start, gefüllt + weißer Ring)
-  const [sx, sy] = pt(soundIdx, DOT_R);
-  arcLayer.appendChild(el('circle', { cx: sx, cy: sy, r: 12, fill: color,
-    stroke: '#F5EFE6', 'stroke-width': 2, opacity: opacity }));
+  arcLayer.appendChild(marker);
 
   // Pfeilspitze am gegriffenen Akkord (Ende)
   const last = pts[pts.length - 1];
@@ -679,8 +684,13 @@ function renderCircle(capo) {
   });
 
   // Zentrum
-  document.getElementById('cCapo').textContent = 'Capo ' + capo;
-  document.getElementById('cSub').textContent = '↓ ' + capo + ' Halbton' + (capo > 1 ? 'töne' : '');
+  if (capo === 0) {
+    document.getElementById('cCapo').textContent = 'Ohne Capo';
+    document.getElementById('cSub').textContent = 'Griffe wie notiert';
+  } else {
+    document.getElementById('cCapo').textContent = 'Capo ' + capo;
+    document.getElementById('cSub').textContent = '↓ ' + capo + ' Halbt' + (capo > 1 ? 'öne' : 'on');
+  }
 
   if (used.size === 0) {
     // Beispiel-Pfeil (gedimmt), damit der Kreis auch leer verständlich ist
@@ -723,7 +733,9 @@ function updateAll() {
 }
 
 document.getElementById('capoSlider').addEventListener('input', function() {
-  document.getElementById('capoNum').textContent = this.value;
+  const v = parseInt(this.value);
+  document.getElementById('capoNum').textContent = v;
+  document.getElementById('capoUnit').textContent = v === 0 ? 'ohne Capo' : 'Bund';
   updateAll();
 });
 
