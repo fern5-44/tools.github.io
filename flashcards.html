@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flashcards — tools/</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #EEF2F8;
+      --bg-dark:   #DFE6F1;
+      --panel:     #FFFFFF;
+      --navy:      #13254A;
+      --navy-2:    #1C3463;
+      --ink:       #1A2540;
+      --muted:     #6B7A96;
+      --dim:       #A7B3C8;
+      --blue:      #2E6BD8;
+      --blue-dk:   #2459B8;
+      --blue-lt:   #8FB5F2;
+      --blue-gl:   rgba(46,107,216,0.08);
+      --rule:      rgba(46,107,216,0.11);
+      --border:    rgba(19,37,74,0.10);
+      --border2:   rgba(19,37,74,0.18);
+      --error:     #C2564B;
+      --display:   'Fraunces', Georgia, 'Times New Roman', serif;
+      --mono:      'DM Mono', ui-monospace, Menlo, Consolas, monospace;
+      --sans:      'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    [hidden] { display: none !important; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+    /* ── Shared nav chrome ── */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:400; }
+    .overlay.show { display:block; }
+    .sidenav { height:100%; width:0; position:fixed; z-index:500; top:0; left:0; background:var(--navy); border-right:0.5px solid rgba(237,242,250,.1); overflow-x:hidden; transition:width .25s cubic-bezier(.4,0,.2,1); padding-top:64px; }
+    .sidenav.open { width:240px; }
+    .sidenav-label { padding:1.1rem 28px 4px; font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--blue-lt); opacity:.85; }
+    .sidenav a { display:block; padding:9px 28px; font-family:var(--mono); font-size:13px; color:rgba(237,242,250,.5); text-decoration:none; letter-spacing:.02em; white-space:nowrap; transition:color .12s, padding-left .12s; }
+    .sidenav a:hover { color:#EDF2FA; padding-left:32px; }
+    .sidenav .closebtn { position:absolute; top:16px; right:18px; font-family:var(--mono); font-size:13px; color:rgba(237,242,250,.5); cursor:pointer; background:none; border:none; padding:0; transition:color .12s; }
+    .sidenav .closebtn:hover { color:var(--blue-lt); }
+    .topnav { position:fixed; top:0; left:0; right:0; height:50px; z-index:300; display:flex; align-items:center; padding:0 2rem; background:rgba(19,37,74,.92); backdrop-filter:blur(12px); border-bottom:0.5px solid rgba(237,242,250,.1); }
+    .nav-logo { font-family:var(--mono); font-size:12px; color:var(--blue-lt); text-decoration:none; letter-spacing:.08em; opacity:.9; margin-right:auto; }
+    .topnav-links { display:flex; list-style:none; align-items:center; gap:2px; }
+    .topnav-links a { font-family:var(--mono); font-size:11px; color:rgba(237,242,250,.5); text-decoration:none; padding:5px 12px; border-radius:5px; letter-spacing:.04em; transition:color .15s; }
+    .topnav-links a:hover { color:#EDF2FA; }
+    .hamburger { display:flex; flex-direction:column; gap:5px; cursor:pointer; padding:6px; background:none; border:none; margin-left:8px; }
+    .hamburger span { display:block; width:18px; height:1px; background:rgba(237,242,250,.55); transition:transform .2s, opacity .2s, background .12s; }
+    .hamburger:hover span { background:var(--blue-lt); }
+    .hamburger.open span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
+    .hamburger.open span:nth-child(2){ opacity:0; }
+    .hamburger.open span:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+
+    /* ── Page ── */
+    .page-wrap { padding-top: 50px; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Header: a ruled index card in navy */
+    .head {
+      background:
+        linear-gradient(to bottom, transparent 46px, rgba(143,181,242,.45) 46px, rgba(143,181,242,.45) 48px, transparent 48px),
+        repeating-linear-gradient(to bottom, transparent 0, transparent 27px, rgba(143,181,242,.08) 27px, rgba(143,181,242,.08) 28px),
+        linear-gradient(160deg, var(--navy-2) 0%, var(--navy) 100%);
+      padding: 2.9rem 2rem 2.6rem;
+    }
+    .head-inner { max-width: 760px; margin: 0 auto; }
+    .head-eyebrow {
+      font-size: 0.68rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--blue-lt); margin-bottom: 14px; opacity: 0.85;
+    }
+    .head-title {
+      font-family: var(--display); font-size: clamp(1.9rem, 4.5vw, 2.8rem); font-weight: 600;
+      line-height: 1.12; letter-spacing: -0.01em; color: #EDF2FA; margin-bottom: 10px;
+    }
+    .head-title em { font-style: italic; font-weight: 400; color: var(--blue-lt); }
+    .head-sub { font-size: 0.875rem; color: rgba(237,242,250,0.55); max-width: 480px; line-height: 1.65; }
+
+    main { padding: 2.2rem 1.5rem 5rem; max-width: 760px; margin: 0 auto; width: 100%; flex: 1; }
+
+    .section-label {
+      font-size: 0.67rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 0.4rem;
+    }
+    .section-title {
+      font-family: var(--display); font-size: clamp(1.25rem, 2.6vw, 1.55rem); font-weight: 600;
+      margin-bottom: 1.4rem; color: var(--ink);
+    }
+
+    .panel-box {
+      border: 1px solid var(--border); border-radius: 14px; background: var(--panel);
+      padding: 1.4rem 1.5rem; box-shadow: 0 1px 4px rgba(19,37,74,0.05);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      font-family: var(--sans); font-size: 0.78rem; font-weight: 500;
+      padding: 9px 16px; border-radius: 8px; cursor: pointer; text-decoration: none;
+      border: 1px solid var(--border2); background: var(--panel); color: var(--ink);
+      transition: color 0.12s, border-color 0.12s, background 0.12s;
+    }
+    .btn:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .btn-primary:hover { background: var(--blue-dk); border-color: var(--blue-dk); color: #fff; }
+    .btn-danger { color: var(--muted); }
+    .btn-danger:hover { color: var(--error); border-color: var(--error); }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+    .btn .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--error); display: none; }
+    .btn.unsaved .dot { display: inline-block; }
+    .btn-link {
+      background: none; border: none; font-family: var(--sans); font-size: 0.78rem; font-weight: 500;
+      color: var(--blue); cursor: pointer; padding: 3px 0;
+      text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(46,107,216,.35);
+    }
+    .btn-link:hover { text-decoration-color: var(--blue); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .tab {
+      font-family: var(--sans); font-size: 0.78rem; font-weight: 500; padding: 6px 14px;
+      border: 1px solid var(--border2); border-radius: 20px; background: var(--panel);
+      color: var(--muted); cursor: pointer; transition: all 0.12s;
+    }
+    .tab:hover { border-color: var(--blue); color: var(--blue); }
+    .tab.active { background: var(--navy); border-color: var(--navy); color: #EDF2FA; }
+
+    /* ── Form fields ── */
+    .field-label {
+      display: block; font-size: 0.67rem; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+    }
+    textarea, input[type=text], input[type=search], select {
+      width: 100%; background: var(--panel); border: 1px solid var(--border2); border-radius: 8px;
+      padding: 10px 12px; font-family: var(--sans); font-size: 0.875rem; color: var(--ink);
+      outline: none; transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    select { appearance: none; cursor: pointer;
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: calc(100% - 15px) 52%, calc(100% - 11px) 52%; background-size: 4px 4px; background-repeat: no-repeat; padding-right: 28px; }
+    textarea::placeholder, input::placeholder { color: var(--dim); }
+    textarea:focus, input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-gl); }
+    /* the paste box is ruled like a vocabulary notebook */
+    textarea {
+      resize: vertical; min-height: 230px; font-family: var(--mono); font-size: 13px;
+      line-height: 28px; padding: 6px 14px;
+      background: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--rule) 27px, var(--rule) 28px) 0 6px / 100% 100% local, var(--panel);
+    }
+
+    .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin: 1rem 0 0.5rem; }
+
+    .parse-info { font-size: 0.8rem; color: var(--muted); margin: 0.75rem 0 1rem; min-height: 1.2em; }
+    .parse-info b { color: var(--blue); font-weight: 600; }
+    details.skipped { margin-bottom: 1rem; }
+    details.skipped summary { font-size: 0.78rem; color: var(--muted); cursor: pointer; }
+    details.skipped pre {
+      margin-top: 0.5rem; font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+      white-space: pre-wrap; max-height: 160px; overflow: auto; background: var(--bg);
+      padding: 10px 12px; border-radius: 8px;
+    }
+
+    /* ── Dropzone ── */
+    .drop {
+      border: 1.5px dashed var(--border2); border-radius: 12px; padding: 2.6rem 1.5rem;
+      text-align: center; cursor: pointer; transition: border-color 0.12s, background 0.12s; display: block;
+      background: var(--bg);
+    }
+    .drop:hover, .drop.over { border-color: var(--blue); background: var(--blue-gl); }
+    .drop-title { font-family: var(--display); font-size: 1.15rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem; }
+    .drop-sub { font-size: 0.8rem; color: var(--muted); }
+    .drop input { display: none; }
+    .note { font-size: 0.8rem; color: var(--muted); line-height: 1.65; margin-top: 1rem; max-width: 560px; }
+
+    /* ── Deck view ── */
+    .deck-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+    .deck-name {
+      font-family: var(--display) !important; font-size: clamp(1.35rem, 3vw, 1.75rem) !important; font-weight: 600;
+      background: transparent !important; border: none !important; border-bottom: 2px solid transparent !important;
+      border-radius: 0 !important; padding: 2px 0 !important; box-shadow: none !important;
+      color: var(--ink); width: 100%; max-width: 520px;
+    }
+    .deck-name:hover, .deck-name:focus { border-bottom-color: var(--blue) !important; }
+
+    .grid2 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+    .grid2 > .panel-box:first-child { background: var(--navy); border-color: var(--navy); color: #EDF2FA; }
+    .grid2 > .panel-box:first-child .overall-num { color: #EDF2FA; }
+    .grid2 > .panel-box:first-child .overall-lbl,
+    .grid2 > .panel-box:first-child .legend-item { color: rgba(237,242,250,.55); }
+    .grid2 > .panel-box:first-child .legend-item b { color: #EDF2FA; }
+    .grid2 > .panel-box:first-child .segbar { background: rgba(255,255,255,.08); }
+
+    .overall { display: flex; align-items: baseline; gap: 10px; margin-bottom: 1rem; }
+    .overall-num { font-family: var(--display); font-size: 2.8rem; font-weight: 600; line-height: 1; color: var(--blue); }
+    .overall-lbl { font-size: 0.8rem; color: var(--muted); }
+
+    .segbar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--bg-dark); margin-bottom: 0.9rem; gap: 2px; }
+    .segbar span { display: block; height: 100%; transition: width 0.4s; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
+    .legend-item i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+    .legend-item b { color: var(--ink); font-weight: 600; }
+
+    .learn-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.9rem; }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted); cursor: pointer; margin-bottom: 1rem; }
+    .check input { accent-color: var(--blue); width: 15px; height: 15px; }
+
+    .actions { margin: 1.1rem 0 1.6rem; }
+
+    .table-tools { display: flex; gap: 12px; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .table-tools input { max-width: 280px; padding: 7px 11px; font-size: 0.82rem; }
+    .table-count { font-size: 0.75rem; color: var(--muted); margin-left: auto; }
+
+    .table-wrap { border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; background: var(--panel); box-shadow: 0 1px 4px rgba(19,37,74,0.05); }
+    table { width: 100%; border-collapse: collapse; min-width: 560px; }
+    th {
+      text-align: left; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); padding: 11px 12px; border-bottom: 2px solid rgba(46,107,216,.35); background: var(--panel);
+    }
+    td { padding: 3px 6px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(46,107,216,.03); }
+    td.num { font-family: var(--mono); font-size: 11px; color: var(--dim); width: 44px; text-align: right; padding-right: 10px; }
+    td input.cell {
+      background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 7px 8px; font-size: 0.875rem; box-shadow: none;
+    }
+    td input.cell:hover { border-color: var(--border); }
+    td input.cell:focus { border-color: var(--blue); background: var(--panel); box-shadow: 0 0 0 3px var(--blue-gl); }
+    td.lvl { width: 140px; white-space: nowrap; }
+    td.del { width: 38px; text-align: center; }
+    .del-btn { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 13px; padding: 6px; }
+    .del-btn:hover { color: var(--error); }
+
+    .dots { display: inline-flex; gap: 3px; vertical-align: middle; }
+    .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--bg-dark); display: inline-block; }
+    .dots i.on { background: var(--blue); }
+    .lvl-name { font-size: 0.72rem; color: var(--muted); margin-left: 8px; vertical-align: middle; }
+
+    .empty-row td { text-align: center; padding: 2.2rem; font-size: 0.82rem; color: var(--muted); }
+
+    /* ── Learn view ── */
+    .learn-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
+    .learn-count { font-size: 0.82rem; color: var(--muted); }
+    .learn-count b { color: var(--ink); font-weight: 600; }
+    .progress { height: 4px; background: var(--bg-dark); border-radius: 4px; overflow: hidden; }
+    .progress span { display: block; height: 100%; background: var(--blue); width: 0; transition: width 0.3s; border-radius: 4px; }
+
+    /* The flashcard itself: a classic ruled index card */
+    .fc-stage { perspective: 1400px; margin: 1.75rem 0 1rem; }
+    .fc { display: grid; cursor: pointer; transform-style: preserve-3d; transition: transform 0.45s cubic-bezier(.4,0,.2,1); position: relative; }
+    .fc.flipped { transform: rotateY(180deg); }
+    .fc.no-anim { transition: none; }
+    .fc-face {
+      grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; position: relative;
+      background:
+        linear-gradient(to bottom, transparent 52px, rgba(46,107,216,.55) 52px, rgba(46,107,216,.55) 54px, transparent 54px),
+        repeating-linear-gradient(to bottom, transparent 0, transparent 31px, var(--rule) 31px, var(--rule) 32px) 0 54px / 100% 100% no-repeat,
+        #FFFFFF;
+      border: 1px solid var(--border); border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(19,37,74,.06), 0 10px 28px -12px rgba(19,37,74,.25);
+      min-height: 310px; padding: 4.5rem 1.75rem 2.75rem;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0.8rem;
+    }
+    .fc-back {
+      transform: rotateY(180deg);
+      background:
+        linear-gradient(to bottom, transparent 52px, rgba(46,107,216,.55) 52px, rgba(46,107,216,.55) 54px, transparent 54px),
+        repeating-linear-gradient(to bottom, transparent 0, transparent 31px, var(--rule) 31px, var(--rule) 32px) 0 54px / 100% 100% no-repeat,
+        #F4F8FF;
+    }
+    .fc-kicker {
+      position: absolute; top: 18px; left: 22px;
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
+    }
+    .fc-back .fc-kicker { color: var(--blue); }
+    .fc-word {
+      font-family: var(--display); font-size: clamp(1.6rem, 4.6vw, 2.5rem); font-weight: 600;
+      line-height: 1.2; color: var(--ink); overflow-wrap: anywhere; max-width: 620px;
+    }
+    .fc-back .fc-word { color: var(--blue-dk); }
+    .fc-word.long { font-size: clamp(1.05rem, 2.8vw, 1.4rem); line-height: 1.45; font-weight: 400; }
+    .fc-q { font-size: 0.85rem; color: var(--muted); max-width: 520px; overflow-wrap: anywhere; }
+    .fc-hint { font-size: 0.7rem; color: var(--dim); position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; }
+
+    .card-level { text-align: center; margin-bottom: 1.4rem; min-height: 18px; }
+
+    .learn-actions { display: grid; gap: 8px; }
+    .learn-actions.one { grid-template-columns: 1fr; }
+    .learn-actions.three { grid-template-columns: repeat(3, 1fr); }
+    .rate { padding: 13px 10px; font-size: 0.85rem; flex-direction: column; gap: 3px; }
+    .rate small { font-size: 0.65rem; font-weight: 400; opacity: 0.65; }
+    .rate-wrong { color: var(--error); border-color: rgba(194,86,75,0.35); }
+    .rate-wrong:hover { color: var(--error); border-color: var(--error); background: rgba(194,86,75,0.06); }
+    .rate-unsure { color: var(--muted); }
+    .rate-unsure:hover { color: var(--ink); border-color: var(--muted); background: var(--bg); }
+    .rate-right { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .rate-right:hover { background: var(--blue-dk); border-color: var(--blue-dk); color: #fff; }
+    kbd { font-family: var(--mono); font-size: 0.62rem; border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; }
+
+    /* ── Done view ── */
+    .done-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 0.75rem; }
+    .done-stat { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.25rem; }
+    .done-stat .n { font-family: var(--display); font-size: 2.2rem; font-weight: 600; line-height: 1.1; color: var(--muted); }
+    .done-stat .l { font-size: 0.78rem; color: var(--muted); }
+    .done-stat.right { background: var(--navy); border-color: var(--navy); }
+    .done-stat.right .n { color: var(--blue-lt); }
+    .done-stat.right .l { color: rgba(237,242,250,.6); }
+    .done-stat.wrong .n { color: var(--error); }
+    .done-msg { font-size: 0.875rem; color: var(--muted); line-height: 1.75; margin: 1.25rem 0 1.5rem; max-width: 560px; }
+    .done-msg b { color: var(--ink); font-weight: 600; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0;
+      background: var(--navy); border-radius: 10px; padding: 11px 18px; font-size: 0.82rem; color: #EDF2FA;
+      z-index: 600; pointer-events: none; transition: all 0.25s; max-width: calc(100% - 32px);
+      box-shadow: 0 8px 24px -8px rgba(19,37,74,.45);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast.err { background: var(--error); }
+
+    footer { text-align: center; padding: 1.5rem; font-size: 0.72rem; color: var(--muted); border-top: 1px solid var(--bg-dark); }
+
+    @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) {
+      .topnav { padding: 0 1.25rem; }
+      .topnav-links { display: none; }
+      .head { padding: 2.2rem 1.25rem 2rem; }
+      main { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .learn-opts { grid-template-columns: 1fr; }
+      .fc-face { min-height: 260px; padding: 4.25rem 1.25rem 2.5rem; }
+      .rate small { display: none; }
+      .done-stat { padding: 0.9rem; }
+      .done-stat .n { font-size: 1.6rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .fc, .segbar span, .progress span, .toast { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeNav()"></div>
+
+<div class="sidenav" id="sidenav">
+  <button class="closebtn" onclick="closeNav()">[ close ]</button>
+  <div class="sidenav-label">Pages</div>
+  <a href="index.html">Home</a>
+  <a href="index.html#tools">Tools</a>
+  <a href="index.html#about">About</a>
+  <a href="index.html#contact">Contact</a>
+</div>
+
+<nav class="topnav">
+  <a href="index.html" class="nav-logo">tools/</a>
+  <ul class="topnav-links">
+    <li><a href="index.html#tools">tools</a></li>
+    <li><a href="index.html#about">about</a></li>
+    <li><a href="index.html#contact">contact</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" onclick="toggleNav()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="page-wrap">
+
+  <header class="head">
+    <div class="head-inner">
+      <p class="head-eyebrow">Learning tool · Flashcards</p>
+      <h1 class="head-title">Flashcards from <em>your own lists</em></h1>
+      <p class="head-sub">Paste a word list or drop a PDF, study the cards, then download your progress as an Excel file. Upload it next time and you pick up exactly where you left off.</p>
+    </div>
+  </header>
+
+  <main id="app">
+
+    <!-- ═════════ CREATE ═════════ -->
+    <div class="view" id="v-create">
+      <div class="deck-head" style="margin-bottom:1rem">
+        <div>
+          <p class="section-label">Step 1</p>
+          <h2 class="section-title" style="margin-bottom:0">Add your words</h2>
+        </div>
+        <button class="btn-link" id="backToDeck" hidden>← back to deck</button>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="paste">Paste text</button>
+        <button class="tab" data-tab="pdf">From PDF</button>
+        <button class="tab" data-tab="excel">Continue from Excel</button>
+      </div>
+
+      <!-- Paste -->
+      <div class="panel-box" data-panel="paste">
+        <label class="field-label" for="pasteText">One card per line</label>
+        <textarea id="pasteText" spellcheck="false" placeholder="house - das Haus
+to run = laufen
+la mer ; the sea
+tree	der Baum"></textarea>
+
+        <div class="opts">
+          <div>
+            <label class="field-label" for="sepSel">Separator</label>
+            <select id="sepSel">
+              <option value="auto">Detect automatically</option>
+              <option value="tab">Tab (from Excel / tables)</option>
+              <option value="dash">Dash  ( - )</option>
+              <option value="eq">Equals  ( = )</option>
+              <option value="semi">Semicolon  ( ; )</option>
+              <option value="colon">Colon  ( : )</option>
+              <option value="comma">Comma  ( , )</option>
+              <option value="alt">Alternating lines</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="swapSel">Card front shows</label>
+            <select id="swapSel">
+              <option value="left">Left side</option>
+              <option value="right">Right side</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="parse-info" id="parseInfo">Paste or type your list above.</p>
+        <details class="skipped" id="skippedBox" hidden>
+          <summary>Show lines that couldn't be split</summary>
+          <pre id="skippedPre"></pre>
+        </details>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="createBtn" disabled>Create cards</button>
+        </div>
+      </div>
+
+      <!-- PDF -->
+      <div class="panel-box" data-panel="pdf" hidden>
+        <label class="drop" id="pdfDrop">
+          <input type="file" id="pdfInput" accept="application/pdf,.pdf" />
+          <div class="drop-title">Drop a PDF here or click to choose</div>
+          <div class="drop-sub">Vocabulary lists and two-column tables work best.</div>
+        </label>
+        <p class="note">The text is read in your browser and placed in the “Paste text” tab, where you can check and fix it before creating cards. Scanned PDFs (photos of pages) contain no text and can't be read.</p>
+      </div>
+
+      <!-- Excel -->
+      <div class="panel-box" data-panel="excel" hidden>
+        <label class="drop" id="xlsDrop">
+          <input type="file" id="xlsInput" accept=".xlsx,.xls,.csv,.ods" />
+          <div class="drop-title">Drop your flashcards Excel file here</div>
+          <div class="drop-sub">The file you downloaded after studying — your levels and stats are restored.</div>
+        </label>
+        <p class="note">Any spreadsheet works too: the first column becomes the front, the second the back. Columns named “Level”, “Correct”, “Wrong” and “Last studied” are picked up automatically.</p>
+      </div>
+    </div>
+
+    <!-- ═════════ DECK ═════════ -->
+    <div class="view" id="v-deck" hidden>
+      <div class="deck-head">
+        <div style="flex:1; min-width:220px">
+          <p class="section-label">Your deck</p>
+          <input type="text" class="deck-name" id="deckName" placeholder="Name your deck" aria-label="Deck name" />
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel-box">
+          <div class="overall">
+            <span class="overall-num" id="overallPct">0%</span>
+            <span class="overall-lbl" id="overallLbl">learned</span>
+          </div>
+          <div class="segbar" id="segbar"></div>
+          <div class="legend" id="legend"></div>
+        </div>
+
+        <div class="panel-box">
+          <div class="learn-opts">
+            <div>
+              <label class="field-label" for="optDir">Ask for</label>
+              <select id="optDir">
+                <option value="front">Back side</option>
+                <option value="back">Front side</option>
+                <option value="mixed">Both, mixed</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="optSize">Cards per round</label>
+              <select id="optSize">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+                <option value="all">All</option>
+              </select>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" id="optOpen" checked /> Skip mastered cards</label>
+          <button class="btn btn-primary" id="startBtn" style="width:100%">Start learning</button>
+        </div>
+      </div>
+
+      <div class="btn-row actions">
+        <button class="btn" id="dlBtn"><span class="dot"></span>Download Excel</button>
+        <button class="btn" id="addMoreBtn">Add more words</button>
+        <button class="btn" id="swapBtn">Swap front and back</button>
+        <button class="btn btn-danger" id="resetBtn">Reset progress</button>
+        <button class="btn btn-danger" id="clearBtn">Delete deck</button>
+      </div>
+
+      <div class="table-tools">
+        <input type="search" id="searchIn" placeholder="Search cards" aria-label="Search cards" />
+        <button class="btn-link" id="addRowBtn">+ add card</button>
+        <span class="table-count" id="tableCount"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>Front</th><th>Back</th><th>Level</th><th></th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═════════ LEARN ═════════ -->
+    <div class="view" id="v-learn" hidden>
+      <div class="learn-top">
+        <span class="learn-count" id="learnCount"></span>
+        <button class="btn-link" id="endBtn">End round</button>
+      </div>
+      <div class="progress"><span id="learnBar"></span></div>
+
+      <div class="fc-stage">
+        <div class="fc" id="fc" tabindex="0" aria-live="polite">
+          <div class="fc-face fc-front">
+            <span class="fc-kicker" id="fcFrontKicker">Front</span>
+            <div class="fc-word" id="fcFront"></div>
+            <span class="fc-hint">tap or press space to flip</span>
+          </div>
+          <div class="fc-face fc-back">
+            <span class="fc-kicker" id="fcBackKicker">Back</span>
+            <div class="fc-word" id="fcBack"></div>
+            <div class="fc-q" id="fcQ"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-level" id="cardLevel"></div>
+
+      <div class="learn-actions one" id="actFlip">
+        <button class="btn btn-primary rate" id="flipBtn">Show answer <small><kbd>space</kbd></small></button>
+      </div>
+      <div class="learn-actions three" id="actRate" hidden>
+        <button class="btn rate rate-wrong" data-rate="wrong">Didn't know <small><kbd>1</kbd></small></button>
+        <button class="btn rate rate-unsure" data-rate="unsure">Not sure <small><kbd>2</kbd></small></button>
+        <button class="btn rate rate-right" data-rate="right">Knew it <small><kbd>3</kbd></small></button>
+      </div>
+    </div>
+
+    <!-- ═════════ DONE ═════════ -->
+    <div class="view" id="v-done" hidden>
+      <p class="section-label">Round finished</p>
+      <h2 class="section-title" id="doneTitle">Nice work.</h2>
+
+      <div class="done-stats">
+        <div class="done-stat right"><div class="n" id="dRight">0</div><div class="l">knew it</div></div>
+        <div class="done-stat"><div class="n" id="dUnsure">0</div><div class="l">not sure</div></div>
+        <div class="done-stat wrong"><div class="n" id="dWrong">0</div><div class="l">didn't know</div></div>
+      </div>
+
+      <div class="panel-box">
+        <div class="overall">
+          <span class="overall-num" id="doneOverall">0%</span>
+          <span class="overall-lbl">of the whole deck learned</span>
+        </div>
+        <div class="segbar" id="doneSegbar"></div>
+        <div class="legend" id="doneLegend"></div>
+      </div>
+
+      <p class="done-msg" id="doneMsg"></p>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="doneDl">Download Excel</button>
+        <button class="btn" id="againBtn">Learn another round</button>
+        <button class="btn" id="toDeckBtn">Back to deck</button>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>Flashcards · Everything runs locally in your browser</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ───────────── Nav ───────────── */
+function toggleNav() {
+  const open = !document.getElementById('sidenav').classList.contains('open');
+  document.getElementById('sidenav').classList.toggle('open', open);
+  document.getElementById('overlay').classList.toggle('show', open);
+  document.getElementById('hamburger').classList.toggle('open', open);
+}
+function closeNav() {
+  document.getElementById('sidenav').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+/* ───────────── Helpers ───────────── */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const STORE_KEY = 'tools-flashcards-v1';
+const MAX_LEVEL = 5;
+const LEVEL_NAMES = ['new', 'seen', 'learning', 'familiar', 'strong', 'mastered'];
+const LEVEL_COLORS = ['#C9D3E3', '#A9C0E8', '#86A9E6', '#6290E0', '#447BDB', '#2E6BD8'];
+
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-5);
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+let toastTimer;
+function toast(msg, isErr) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 3200);
+}
+
+const scriptCache = {};
+function loadScript(src) {
+  if (!scriptCache[src]) {
+    scriptCache[src] = new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load ' + src));
+      document.head.appendChild(s);
+    });
+  }
+  return scriptCache[src];
+}
+const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+const PDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDF_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ───────────── State ───────────── */
+let deck = { name: '', cards: [] };
+let dirty = false;           // changed since last Excel download
+let S = null;                // current learning session
+
+function newCard(front, back) {
+  return { id: uid(), front, back, level: 0, right: 0, wrong: 0, last: null };
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({ deck, dirty })); } catch (e) {}
+}
+function restore() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (d && d.deck && Array.isArray(d.deck.cards) && d.deck.cards.length) {
+      deck = d.deck; dirty = !!d.dirty; return true;
+    }
+  } catch (e) {}
+  return false;
+}
+function markDirty() { dirty = true; save(); updateDirty(); }
+function updateDirty() {
+  $('#dlBtn').classList.toggle('unsaved', dirty);
+  $('#dlBtn').title = dirty ? 'You have progress that is not in a downloaded Excel file yet' : '';
+}
+const usable = () => deck.cards.filter(c => c.front.trim() && c.back.trim());
+
+/* ───────────── Views ───────────── */
+function show(v) {
+  $$('.view').forEach(el => el.hidden = el.id !== 'v-' + v);
+  if (v === 'deck') renderDeck();
+  if (v === 'create') $('#backToDeck').hidden = !deck.cards.length;
+  const top = $('#app').getBoundingClientRect().top + window.scrollY - 60;
+  if (window.scrollY > top || v === 'learn') window.scrollTo({ top, behavior: 'smooth' });
+}
+
+/* ───────────── Tabs ───────────── */
+function setTab(name) {
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  $$('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== name);
+}
+$$('.tab').forEach(t => t.addEventListener('click', () => setTab(t.dataset.tab)));
+
+/* ───────────── Parsing ───────────── */
+const SEP_MAP = { tab: '\t', eq: '=', semi: ';', colon: ':', comma: ',' };
+const AUTO_SEPS = ['\t', ' = ', ' – ', ' — ', ' - ', ' : ', ';', '=', ' –', ' -'];
+
+function cleanLine(l) {
+  return l.replace(/\u00a0/g, ' ').replace(/^\s*(?:\d{1,4}[.)]|[•*·▪●◦])\s+/, '').trim();
+}
+function splitOn(line, s) {
+  const i = line.indexOf(s);
+  if (i <= 0) return null;
+  const a = line.slice(0, i).trim(), b = line.slice(i + s.length).trim();
+  return a && b ? [a, b] : null;
+}
+function splitLine(line, sep) {
+  if (sep === 'auto') {
+    for (const s of AUTO_SEPS) { const r = splitOn(line, s); if (r) return r; }
+    const parts = line.split(/\s{3,}/);
+    if (parts.length >= 2) return [parts[0].trim(), parts.slice(1).join(' ').trim()];
+    return null;
+  }
+  if (sep === 'dash') return splitOn(line, ' - ') || splitOn(line, ' – ') || splitOn(line, '-');
+  return splitOn(line, SEP_MAP[sep]);
+}
+function parseText(text, sep) {
+  const lines = text.split(/\r?\n/).map(cleanLine).filter(Boolean);
+  const pairs = [], skipped = [];
+  if (sep === 'alt') {
+    for (let i = 0; i + 1 < lines.length; i += 2) pairs.push([lines[i], lines[i + 1]]);
+    if (lines.length % 2) skipped.push(lines[lines.length - 1]);
+  } else {
+    for (const l of lines) { const r = splitLine(l, sep); r ? pairs.push(r) : skipped.push(l); }
+  }
+  return { pairs, skipped };
+}
+
+let parsed = { pairs: [], skipped: [] };
+function updateParse() {
+  const text = $('#pasteText').value;
+  parsed = parseText(text, $('#sepSel').value);
+  const info = $('#parseInfo');
+  if (!text.trim()) {
+    info.textContent = 'Paste or type your list above.';
+  } else if (!parsed.pairs.length) {
+    info.textContent = 'No cards found yet — try another separator.';
+  } else {
+    info.innerHTML = '';
+    const b = document.createElement('b'); b.textContent = parsed.pairs.length;
+    info.append(b, parsed.pairs.length === 1 ? ' card found' : ' cards found');
+    if (parsed.skipped.length) info.append(' · ' + parsed.skipped.length + ' line' + (parsed.skipped.length === 1 ? '' : 's') + ' skipped');
+  }
+  $('#skippedBox').hidden = !parsed.skipped.length || !parsed.pairs.length;
+  $('#skippedPre').textContent = parsed.skipped.join('\n');
+  $('#createBtn').disabled = !parsed.pairs.length;
+  $('#createBtn').textContent = deck.cards.length ? 'Add to deck' : 'Create cards';
+}
+let parseTimer;
+$('#pasteText').addEventListener('input', () => { clearTimeout(parseTimer); parseTimer = setTimeout(updateParse, 150); });
+$('#sepSel').addEventListener('change', updateParse);
+
+function addPairs(pairs, swap) {
+  const key = (f, b) => (f + '\u0000' + b).toLowerCase();
+  const seen = new Set(deck.cards.map(c => key(c.front, c.back)));
+  let added = 0, dup = 0;
+  for (let [a, b] of pairs) {
+    if (swap) [a, b] = [b, a];
+    const k = key(a, b);
+    if (seen.has(k)) { dup++; continue; }
+    seen.add(k); deck.cards.push(newCard(a, b)); added++;
+  }
+  return { added, dup };
+}
+
+$('#createBtn').addEventListener('click', () => {
+  if (!parsed.pairs.length) return;
+  const { added, dup } = addPairs(parsed.pairs, $('#swapSel').value === 'right');
+  if (!deck.name) deck.name = 'My deck';
+  markDirty();
+  $('#pasteText').value = ''; updateParse();
+  show('deck');
+  toast(added + ' card' + (added === 1 ? '' : 's') + ' added' + (dup ? ' · ' + dup + ' duplicate' + (dup === 1 ? '' : 's') + ' skipped' : ''));
+});
+$('#backToDeck').addEventListener('click', () => show('deck'));
+
+/* ───────────── Drop zones ───────────── */
+function setupDrop(zone, input, handler) {
+  input.addEventListener('change', () => { if (input.files[0]) handler(input.files[0]); input.value = ''; });
+  ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('over'); }));
+  zone.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handler(f); });
+}
+
+/* ───────────── PDF ───────────── */
+async function pdfToText(file) {
+  await loadScript(PDF_URL);
+  pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER;
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const out = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    const items = tc.items
+      .filter(i => i.str && i.str.trim())
+      .map(i => ({ s: i.str, x: i.transform[4], y: i.transform[5], w: i.width, h: Math.abs(i.transform[3]) || 10 }))
+      .sort((a, b) => b.y - a.y || a.x - b.x);
+
+    // group items into visual lines
+    const lines = [];
+    for (const it of items) {
+      const last = lines[lines.length - 1];
+      if (last && Math.abs(last.y - it.y) < Math.max(2, it.h * 0.5)) last.items.push(it);
+      else lines.push({ y: it.y, items: [it] });
+    }
+    // rebuild each line; large horizontal gaps become tabs (table columns)
+    for (const l of lines) {
+      l.items.sort((a, b) => a.x - b.x);
+      let txt = '', end = null;
+      for (const it of l.items) {
+        if (end !== null) {
+          const gap = it.x - end;
+          if (gap > it.h * 1.6) txt += '\t';
+          else if (gap > it.h * 0.12 && !/\s$/.test(txt) && !/^\s/.test(it.s)) txt += ' ';
+        }
+        txt += it.s; end = it.x + it.w;
+      }
+      out.push(txt.replace(/ {2,}/g, ' ').trim());
+    }
+    out.push('');
+  }
+  return { text: out.join('\n').trim(), pages: pdf.numPages };
+}
+
+setupDrop($('#pdfDrop'), $('#pdfInput'), async file => {
+  const title = $('#pdfDrop .drop-title');
+  const orig = title.textContent;
+  title.textContent = 'Reading ' + file.name + ' …';
+  try {
+    const { text, pages } = await pdfToText(file);
+    if (!text) { toast('No text found in this PDF — it is probably a scan.', true); return; }
+    const ta = $('#pasteText');
+    ta.value = ta.value.trim() ? ta.value.trim() + '\n' + text : text;
+    if (!deck.cards.length) deck.name = file.name.replace(/\.pdf$/i, '');
+    setTab('paste'); updateParse();
+    toast('Text from ' + pages + ' page' + (pages === 1 ? '' : 's') + ' added — check it, then create cards.');
+  } catch (e) {
+    console.error(e);
+    toast('This PDF could not be read. Try copying the text and pasting it instead.', true);
+  } finally {
+    title.textContent = orig;
+  }
+});
+
+/* ───────────── Excel import ───────────── */
+function parseDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return isNaN(v) ? null : v.getTime();
+  if (typeof v === 'number') return Math.round((v - 25569) * 86400000);
+  const d = new Date(String(v).replace(' ', 'T'));
+  return isNaN(d) ? null : d.getTime();
+}
+const toInt = (v, max) => { const n = parseInt(v, 10); return isNaN(n) || n < 0 ? 0 : (max != null ? Math.min(max, n) : n); };
+
+async function importSheet(file) {
+  await loadScript(XLSX_URL);
+  const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+  if (!rows.length) throw new Error('empty');
+
+  const head = rows[0].map(h => String(h).toLowerCase().trim());
+  const find = (...keys) => head.findIndex(h => keys.some(k => h.startsWith(k)));
+  let iF = find('front', 'term', 'word', 'question', 'vorderseite', 'begriff', 'wort', 'frage');
+  let iB = find('back', 'translation', 'answer', 'meaning', 'rückseite', 'rueckseite', 'übersetzung', 'uebersetzung', 'antwort');
+  let iL = find('level', 'stufe'), iR = find('correct', 'richtig'), iW = find('wrong', 'falsch'), iD = find('last', 'zuletzt');
+  let start = 1;
+  if (iF < 0 || iB < 0) { iF = 0; iB = 1; iL = iR = iW = iD = -1; start = 0; }
+
+  const cards = [];
+  for (let r = start; r < rows.length; r++) {
+    const row = rows[r];
+    const f = String(row[iF] ?? '').trim(), b = String(row[iB] ?? '').trim();
+    if (!f || !b) continue;
+    const c = newCard(f, b);
+    if (iL >= 0) c.level = toInt(row[iL], MAX_LEVEL);
+    if (iR >= 0) c.right = toInt(row[iR]);
+    if (iW >= 0) c.wrong = toInt(row[iW]);
+    if (iD >= 0) c.last = parseDate(row[iD]);
+    cards.push(c);
+  }
+
+  let name = file.name.replace(/\.(xlsx|xls|csv|ods)$/i, '').replace(/_\d{4}-\d{2}-\d{2}$/, '');
+  const info = wb.Sheets['Info'];
+  if (info) {
+    const irows = XLSX.utils.sheet_to_json(info, { header: 1, defval: '' });
+    const nameRow = irows.find(r => String(r[0]).toLowerCase() === 'deck');
+    if (nameRow && String(nameRow[1]).trim()) name = String(nameRow[1]).trim();
+  }
+  return { name, cards };
+}
+
+setupDrop($('#xlsDrop'), $('#xlsInput'), async file => {
+  try {
+    const res = await importSheet(file);
+    if (!res.cards.length) { toast('No cards found — the first two columns need text.', true); return; }
+    if (deck.cards.length && !confirm('Replace the current deck (' + deck.cards.length + ' cards) with the cards from this file?')) return;
+    deck = { name: res.name, cards: res.cards };
+    dirty = false; save(); updateDirty();
+    show('deck');
+    const learned = res.cards.filter(c => c.level > 0).length;
+    toast(res.cards.length + ' cards loaded' + (learned ? ' · progress restored for ' + learned : ''));
+  } catch (e) {
+    console.error(e);
+    toast('This file could not be read. Use .xlsx, .xls or .csv.', true);
+  }
+});
+
+/* ───────────── Excel export ───────────── */
+const fmtDate = t => {
+  if (!t) return '';
+  const d = new Date(t), p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+};
+async function exportXlsx() {
+  const cards = usable();
+  if (!cards.length) { toast('There are no cards to download yet.', true); return; }
+  try { await loadScript(XLSX_URL); }
+  catch (e) { toast('The Excel library could not load — check your connection.', true); return; }
+
+  const header = ['Front', 'Back', 'Level (0-5)', 'Progress %', 'Correct', 'Wrong', 'Last studied'];
+  const data = [header, ...cards.map(c => [c.front, c.back, c.level, Math.round(c.level / MAX_LEVEL * 100), c.right, c.wrong, fmtDate(c.last)])];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 32 }, { wch: 32 }, { wch: 11 }, { wch: 11 }, { wch: 9 }, { wch: 8 }, { wch: 17 }];
+  ws['!autofilter'] = { ref: 'A1:G' + data.length };
+
+  const st = stats();
+  const info = XLSX.utils.aoa_to_sheet([
+    ['Deck', deck.name || 'My deck'],
+    ['Downloaded', fmtDate(Date.now())],
+    ['Cards', cards.length],
+    ['Learned overall', st.pct + '%'],
+    ['Mastered', st.counts[MAX_LEVEL]],
+    [],
+    ['How to continue', 'Open tools/ → Flashcards → "Continue from Excel" and upload this file.'],
+    ['Levels', '0 new · 1 seen · 2 learning · 3 familiar · 4 strong · 5 mastered'],
+    ['Editing', 'You can add rows or fix words here. New rows without a level start at 0.']
+  ]);
+  info['!cols'] = [{ wch: 18 }, { wch: 70 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Cards');
+  XLSX.utils.book_append_sheet(wb, info, 'Info');
+  const slug = (deck.name || 'flashcards').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 40) || 'flashcards';
+  XLSX.writeFile(wb, slug + '_' + fmtDate(Date.now()).slice(0, 10) + '.xlsx');
+  dirty = false; save(); updateDirty();
+  toast('Excel downloaded — upload it next time to continue.');
+}
+$('#dlBtn').addEventListener('click', exportXlsx);
+$('#doneDl').addEventListener('click', exportXlsx);
+
+/* ───────────── Deck view ───────────── */
+function stats() {
+  const cards = usable();
+  const counts = Array(MAX_LEVEL + 1).fill(0);
+  let sum = 0;
+  cards.forEach(c => { counts[c.level]++; sum += c.level; });
+  const pct = cards.length ? Math.round(sum / (cards.length * MAX_LEVEL) * 100) : 0;
+  return { total: cards.length, counts, pct };
+}
+function renderStats(barEl, legendEl, pctEl) {
+  const st = stats();
+  if (pctEl) pctEl.textContent = st.pct + '%';
+  barEl.innerHTML = '';
+  st.counts.forEach((n, lvl) => {
+    if (!n) return;
+    const s = document.createElement('span');
+    s.style.width = (n / st.total * 100) + '%';
+    s.style.background = LEVEL_COLORS[lvl];
+    s.title = n + ' ' + LEVEL_NAMES[lvl];
+    barEl.appendChild(s);
+  });
+  legendEl.innerHTML = '';
+  st.counts.forEach((n, lvl) => {
+    const el = document.createElement('span');
+    el.className = 'legend-item';
+    const i = document.createElement('i'); i.style.background = LEVEL_COLORS[lvl];
+    const b = document.createElement('b'); b.textContent = n;
+    el.append(i, b, ' ' + LEVEL_NAMES[lvl]);
+    legendEl.appendChild(el);
+  });
+  return st;
+}
+function dots(level) {
+  const wrap = document.createElement('span');
+  const d = document.createElement('span'); d.className = 'dots';
+  for (let i = 1; i <= MAX_LEVEL; i++) { const x = document.createElement('i'); if (i <= level) x.className = 'on'; d.appendChild(x); }
+  const n = document.createElement('span'); n.className = 'lvl-name'; n.textContent = LEVEL_NAMES[level];
+  wrap.append(d, n);
+  return wrap;
+}
+
+function renderDeck() {
+  if (document.activeElement !== $('#deckName')) $('#deckName').value = deck.name;
+  const st = renderStats($('#segbar'), $('#legend'), $('#overallPct'));
+  $('#overallLbl').textContent = 'learned · ' + st.total + ' card' + (st.total === 1 ? '' : 's');
+  $('#startBtn').disabled = !st.total;
+  updateDirty();
+  renderTable();
+}
+
+let saveTimer;
+function deferredSave() { clearTimeout(saveTimer); saveTimer = setTimeout(markDirty, 300); }
+
+function renderTable() {
+  const q = $('#searchIn').value.trim().toLowerCase();
+  const tbody = $('#tbody');
+  tbody.innerHTML = '';
+  const list = deck.cards.map((c, i) => [c, i]).filter(([c]) => !q || c.front.toLowerCase().includes(q) || c.back.toLowerCase().includes(q));
+  $('#tableCount').textContent = q ? list.length + ' of ' + deck.cards.length : deck.cards.length + ' cards';
+
+  if (!list.length) {
+    const tr = document.createElement('tr'); tr.className = 'empty-row';
+    const td = document.createElement('td'); td.colSpan = 5;
+    td.textContent = q ? 'No card matches “' + q + '”.' : 'This deck is empty — add words to start.';
+    tr.appendChild(td); tbody.appendChild(tr); return;
+  }
+  const frag = document.createDocumentFragment();
+  for (const [c, i] of list) {
+    const tr = document.createElement('tr');
+    const tdN = document.createElement('td'); tdN.className = 'num'; tdN.textContent = i + 1;
+    const mk = field => {
+      const td = document.createElement('td');
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'cell'; inp.value = c[field];
+      inp.setAttribute('aria-label', field === 'front' ? 'Front' : 'Back');
+      inp.addEventListener('input', () => { c[field] = inp.value; deferredSave(); });
+      inp.addEventListener('blur', () => { if (inp.value !== inp.value.trim()) { c[field] = inp.value = inp.value.trim(); } renderStats($('#segbar'), $('#legend'), $('#overallPct')); });
+      td.appendChild(inp); return td;
+    };
+    const tdL = document.createElement('td'); tdL.className = 'lvl'; tdL.appendChild(dots(c.level));
+    tdL.title = 'Correct ' + c.right + ' · Wrong ' + c.wrong + (c.last ? ' · last ' + fmtDate(c.last) : '');
+    const tdD = document.createElement('td'); tdD.className = 'del';
+    const del = document.createElement('button'); del.className = 'del-btn'; del.textContent = '✕'; del.title = 'Delete card';
+    del.addEventListener('click', () => { deck.cards = deck.cards.filter(x => x !== c); markDirty(); renderDeck(); });
+    tdD.appendChild(del);
+    tr.append(tdN, mk('front'), mk('back'), tdL, tdD);
+    frag.appendChild(tr);
+  }
+  tbody.appendChild(frag);
+}
+
+$('#searchIn').addEventListener('input', renderTable);
+$('#deckName').addEventListener('input', e => { deck.name = e.target.value; deferredSave(); });
+$('#addRowBtn').addEventListener('click', () => {
+  $('#searchIn').value = '';
+  deck.cards.push(newCard('', ''));
+  save(); renderTable();
+  const inputs = $$('#tbody input.cell');
+  inputs[inputs.length - 2]?.focus();
+});
+$('#addMoreBtn').addEventListener('click', () => { setTab('paste'); updateParse(); show('create'); });
+$('#swapBtn').addEventListener('click', () => {
+  deck.cards.forEach(c => [c.front, c.back] = [c.back, c.front]);
+  markDirty(); renderDeck(); toast('Front and back swapped');
+});
+$('#resetBtn').addEventListener('click', () => {
+  if (!confirm('Set every card back to level 0 and clear its stats?')) return;
+  deck.cards.forEach(c => Object.assign(c, { level: 0, right: 0, wrong: 0, last: null }));
+  markDirty(); renderDeck(); toast('Progress reset');
+});
+$('#clearBtn').addEventListener('click', () => {
+  if (dirty && !confirm('Your latest progress has not been downloaded. Delete the deck anyway?')) return;
+  if (!dirty && !confirm('Delete this deck from the browser? Your downloaded Excel files are not affected.')) return;
+  deck = { name: '', cards: [] }; dirty = false;
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+  updateParse(); show('create');
+});
+
+/* ───────────── Learning ───────────── */
+function startLearning() {
+  let pool = usable();
+  if ($('#optOpen').checked) pool = pool.filter(c => c.level < MAX_LEVEL);
+  if (!pool.length) { toast('Every card is mastered. Untick “Skip mastered cards” to review them.'); return; }
+  // weakest and longest-unseen cards first
+  pool = shuffle(pool).sort((a, b) => a.level - b.level || (a.last || 0) - (b.last || 0));
+  const size = $('#optSize').value;
+  const chosen = shuffle(pool.slice(0, size === 'all' ? pool.length : Math.min(+size, pool.length)));
+  S = {
+    queue: chosen.map(c => c.id),
+    cards: chosen,
+    startLevels: new Map(chosen.map(c => [c.id, c.level])),
+    dir: $('#optDir').value,
+    total: chosen.length, cleared: 0,
+    res: { right: 0, unsure: 0, wrong: 0 },
+    current: null, flipped: false, reversed: false
+  };
+  show('learn');
+  nextCard();
+}
+$('#startBtn').addEventListener('click', startLearning);
+$('#againBtn').addEventListener('click', startLearning);
+$('#toDeckBtn').addEventListener('click', () => show('deck'));
+
+function nextCard() {
+  if (!S.queue.length) return finish();
+  const id = S.queue.shift();
+  const c = deck.cards.find(x => x.id === id);
+  if (!c) return nextCard();
+  S.current = c; S.flipped = false;
+  S.reversed = S.dir === 'back' || (S.dir === 'mixed' && Math.random() < 0.5);
+
+  const fc = $('#fc');
+  fc.classList.add('no-anim'); fc.classList.remove('flipped');
+  void fc.offsetWidth;
+  fc.classList.remove('no-anim');
+
+  const q = S.reversed ? c.back : c.front, a = S.reversed ? c.front : c.back;
+  $('#fcFrontKicker').textContent = S.reversed ? 'Back' : 'Front';
+  $('#fcBackKicker').textContent = S.reversed ? 'Front' : 'Back';
+  $('#fcFront').textContent = q;
+  $('#fcBack').textContent = a;
+  $('#fcQ').textContent = q;
+  $('#fcFront').classList.toggle('long', q.length > 50);
+  $('#fcBack').classList.toggle('long', a.length > 50);
+
+  const lvl = $('#cardLevel'); lvl.innerHTML = ''; lvl.appendChild(dots(c.level));
+  $('#actFlip').hidden = false; $('#actRate').hidden = true;
+
+  const inQueue = S.queue.length;
+  $('#learnCount').innerHTML = '';
+  const b = document.createElement('b'); b.textContent = S.cleared + ' / ' + S.total;
+  $('#learnCount').append(b, ' done' + (inQueue + 1 > S.total - S.cleared ? ' · ' + (inQueue + 1 - (S.total - S.cleared)) + ' repeat' + (inQueue + 1 - (S.total - S.cleared) === 1 ? '' : 's') + ' queued' : ''));
+  $('#learnBar').style.width = (S.cleared / S.total * 100) + '%';
+}
+
+function flip() {
+  if (!S || !S.current) return;
+  S.flipped = !S.flipped;
+  $('#fc').classList.toggle('flipped', S.flipped);
+  if (S.flipped) { $('#actFlip').hidden = true; $('#actRate').hidden = false; }
+}
+$('#fc').addEventListener('click', flip);
+$('#flipBtn').addEventListener('click', flip);
+
+function rate(r) {
+  if (!S || !S.flipped || !S.current) return;
+  const c = S.current;
+  c.last = Date.now();
+  if (r === 'wrong') {
+    c.wrong++;
+    c.level = Math.max(0, c.level - 2);
+    S.queue.splice(Math.min(3, S.queue.length), 0, c.id);   // comes back in a few cards
+  } else if (r === 'unsure') {
+    S.cleared++;                                            // level stays the same
+  } else {
+    c.right++;
+    c.level = Math.min(MAX_LEVEL, c.level + 1);
+    S.cleared++;
+  }
+  S.res[r]++;
+  markDirty();
+  nextCard();
+}
+$$('#actRate [data-rate]').forEach(b => b.addEventListener('click', () => rate(b.dataset.rate)));
+
+document.addEventListener('keydown', e => {
+  if ($('#v-learn').hidden || !S) return;
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (!S.flipped) flip(); }
+  else if (S.flipped && e.key === '1') rate('wrong');
+  else if (S.flipped && e.key === '2') rate('unsure');
+  else if (S.flipped && e.key === '3') rate('right');
+  else if (e.key === 'Escape') finish();
+});
+$('#endBtn').addEventListener('click', finish);
+
+function finish() {
+  if (!S) return show('deck');
+  const up = S.cards.filter(c => c.level > S.startLevels.get(c.id)).length;
+  const down = S.cards.filter(c => c.level < S.startLevels.get(c.id)).length;
+  const newlyMastered = S.cards.filter(c => c.level === MAX_LEVEL && S.startLevels.get(c.id) < MAX_LEVEL).length;
+  const answered = S.res.right + S.res.unsure + S.res.wrong;
+
+  $('#dRight').textContent = S.res.right;
+  $('#dUnsure').textContent = S.res.unsure;
+  $('#dWrong').textContent = S.res.wrong;
+  $('#doneTitle').textContent = !answered ? 'Round ended.' : S.res.wrong === 0 ? 'Clean round.' : S.res.right >= S.res.wrong ? 'Good round.' : 'Practice makes it stick.';
+  renderStats($('#doneSegbar'), $('#doneLegend'), $('#doneOverall'));
+
+  const msg = $('#doneMsg'); msg.innerHTML = '';
+  const add = (t, bold) => { if (bold) { const b = document.createElement('b'); b.textContent = t; msg.append(b); } else msg.append(t); };
+  if (answered) {
+    add(up + ' card' + (up === 1 ? '' : 's'), true); add(' moved up a level');
+    if (down) { add(', '); add(String(down), true); add(' moved down'); }
+    if (newlyMastered) { add(', and '); add(newlyMastered + ' newly mastered', true); }
+    add('. ');
+  }
+  add('Download the Excel file to keep this progress — next time, upload it under “Continue from Excel”.');
+  S = null;
+  show('done');
+}
+
+window.addEventListener('beforeunload', e => {
+  if (dirty && deck.cards.length) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ───────────── Init ───────────── */
+setupInit();
+function setupInit() {
+  if (restore()) { show('deck'); }
+  else { show('create'); }
+  updateParse();
+  updateDirty();
+}
+</script>
+</body>
+</html>
