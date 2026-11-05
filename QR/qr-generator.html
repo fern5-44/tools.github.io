@@ -216,7 +216,11 @@
     table.bits tr:last-child td { font-weight: 500; border-top: 0.5px solid #ccc; }
     .b-ec { background: #fde2c8; }
     .b-mask { background: #d6e6fa; }
-    .fmt-line { font-size: 13px; line-height: 1.5; color: #444; margin: 0 0 6px; }
+    .fmt-line { font-size: 13px; line-height: 1.5; color: #444; margin: 0 0 6px; padding: 3px 6px; border-radius: 6px; cursor: pointer; }
+    .fmt-line:hover { background: #f5f9fd; }
+    .fmt-tip { font-size: 12px; color: #888; margin: 0 0 8px; }
+    table.bits td[data-g] { cursor: pointer; }
+    table.bits td[data-g]:hover { outline: 1.5px solid #185fa5; outline-offset: -1.5px; border-radius: 3px; }
     .chip {
       display: inline-block;
       font-family: 'DM Mono', monospace;
@@ -690,7 +694,7 @@
 
       return {
         n, v, ec, ecPercent: EC_PERCENT[ec], mask, maskText: MASKS[mask].t, maskFn,
-        fmtRead, fmtRead2, fmtMask: FORMAT_MASK, fmt, fmtCopy,
+        fmtRead, fmtRead2, fmtMask: FORMAT_MASK, fmt, fmtCopy, fmt1, fmt2,
         blocks, ecPer, dataTotal, total, stream, values, byteCells,
         kind, cell, dataBytes, segs, piecesOf, segAtBit, text
       };
@@ -727,7 +731,7 @@
     };
     const ALT = { data: '#a9dbb8', ec: '#cfcfcb' };
 
-    let A = null, fg = '#1a1a18', cellPx = 0, dpr = 1, highlight = -1, locked = -1, tableDirty = true;
+    let A = null, fg = '#1a1a18', cellPx = 0, dpr = 1, hover = null, locked = null, tableDirty = true;
 
     function colorAt(r, c) {
       const k = A.kind[r][c];
@@ -778,11 +782,11 @@
           mctx.fillText(k + 1, x, y);
         });
       }
-      const hk = locked >= 0 ? locked : highlight;
-      if (hk >= 0 && A.byteCells[hk]) {
-        mctx.strokeStyle = '#185fa5';
-        mctx.lineWidth = Math.max(2, cellPx * 0.14);
-        A.byteCells[hk].forEach(([r, c]) => {
+      const hl = locked || hover;
+      if (hl) {
+        mctx.strokeStyle = '#0d3b6e';
+        mctx.lineWidth = Math.max(2, cellPx * 0.18);
+        hl.cells.forEach(([r, c]) => {
           mctx.strokeRect(c * cellPx + 1, r * cellPx + 1, cellPx - 2, cellPx - 2);
         });
       }
@@ -800,6 +804,35 @@
       return t + ')';
     }
 
+    // Markierungen: ein Byte oder eine Gruppe der Format-Information
+    const FMT_GROUPS = { ec: [0, 1], mask: [2, 3, 4], bch: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14] };
+    function byteHL(k) { return { key: 'b' + k, cells: A.byteCells[k] }; }
+    function fmtHL(g) {
+      const idx = FMT_GROUPS[g];
+      return { key: 'f' + g, cells: idx.map((i) => A.fmt1[i]).concat(idx.map((i) => A.fmt2[i])) };
+    }
+    function groupOf(i) { return i < 2 ? 'ec' : i < 5 ? 'mask' : 'bch'; }
+    const colour = (b) => (b ? 'schwarz' : 'weiss');
+
+    function fmtGroupText(g) {
+      const raw = FMT_GROUPS[g].map((i) => A.fmtRead[i]);
+      const res = FMT_GROUPS[g].map((i) => A.fmt[i]);
+      const msk = FMT_GROUPS[g].map((i) => A.fmtMask[i]);
+      if (g === 'ec') {
+        return 'Fehlerkorrektur-Stufe (Format-Bits 1 und 2): Im Bild ' + colour(raw[0]) + ', ' + colour(raw[1]) +
+          ' (' + raw.join('') + '). Nach dem XOR mit ' + msk.join('') + ' wird daraus ' + res.join('') +
+          ', also Stufe ' + A.ec + ': etwa ' + A.ecPercent + ' der Bytes dürfen beschädigt sein. ' +
+          'So erkennt man es im Bild: schwarz/schwarz = L (7 %), schwarz/weiss = M (15 %), weiss/schwarz = Q (25 %), weiss/weiss = H (30 %).';
+      }
+      if (g === 'mask') {
+        return 'Maske (Format-Bits 3 bis 5): Im Bild ' + raw.map(colour).join(', ') + ' (' + raw.join('') +
+          '). Nach dem XOR mit ' + msk.join('') + ' wird daraus ' + res.join('') + ', also Maske ' + A.mask +
+          ': Ein Feld wird umgedreht, wenn ' + A.maskText + '.';
+      }
+      return 'Prüfbits (Format-Bits 6 bis 15): Damit erkennt und korrigiert der Scanner Lesefehler in der Format-Information. ' +
+        'Sie enthalten keine zusätzliche Information.';
+    }
+
     function describe(r, c) {
       const where = 'Zeile ' + r + ', Spalte ' + c + ': ';
       const k = A.kind[r][c];
@@ -813,15 +846,15 @@
           const seg = A.segAtBit(s.logical * 8 + info.bit);
           if (seg) t += ' Gehört zu: ' + seg.label + '.';
         }
-        return { text: t, k: info.k };
+        return { text: t, hl: byteHL(info.k) };
       }
       if (k === 'format') {
         const [copy, i] = A.fmtCopy[r + ',' + c];
-        return { text: where + 'Format-Information, Kopie ' + copy + ', Bit ' + (i + 1) + ' von 15. ' +
-          (i < 2 ? 'Gehört zur Fehlerkorrektur-Stufe.' : i < 5 ? 'Gehört zur Maskennummer.' : 'Prüfbit (BCH-Code).'), k: -1 };
+        const g = groupOf(i);
+        return { text: where + 'Format-Information, Kopie ' + copy + ', Bit ' + (i + 1) + ' von 15. ' + fmtGroupText(g) +
+          ' Die passenden Felder beider Kopien sind blau umrandet.', hl: fmtHL(g) };
       }
-      if (k === 'rem') return { text: where + COLORS.rem[1] + '. ' + COLORS.rem[2], k: -1 };
-      return { text: where + COLORS[k][1] + '. ' + COLORS[k][2], k: -1 };
+      return { text: where + COLORS[k][1] + '. ' + COLORS[k][2], hl: null };
     }
 
     function cellFromEvent(e) {
@@ -832,36 +865,42 @@
       return [r, c];
     }
 
+    function setHover(hl) {
+      const a = hover ? hover.key : '', b = hl ? hl.key : '';
+      hover = hl;
+      if (a !== b) draw();
+    }
     function showProbe(rc) {
-      if (!rc) { probe.textContent = PROBE_HINT; if (highlight !== -1) { highlight = -1; draw(); } return; }
+      if (!rc) { probe.textContent = PROBE_HINT; setHover(null); return; }
       const d = describe(rc[0], rc[1]);
       probe.textContent = d.text;
-      if (d.k !== highlight) { highlight = d.k; draw(); }
+      setHover(d.hl);
     }
 
-    map.addEventListener('pointermove', (e) => { if (A && locked < 0) showProbe(cellFromEvent(e)); });
-    map.addEventListener('pointerleave', (e) => { if (A && locked < 0 && e.pointerType === 'mouse') showProbe(null); });
-    map.addEventListener('pointerdown', (e) => { if (A) { locked = -1; showProbe(cellFromEvent(e)); } });
+    map.addEventListener('pointermove', (e) => { if (A && !locked) showProbe(cellFromEvent(e)); });
+    map.addEventListener('pointerleave', (e) => { if (A && !locked && e.pointerType === 'mouse') showProbe(null); });
+    map.addEventListener('pointerdown', (e) => { if (A) { locked = null; showProbe(cellFromEvent(e)); } });
 
     function bitRow(label, arr, cls) {
       return '<tr><th>' + label + '</th>' + arr.map((b, i) =>
-        '<td class="' + (cls ? (i < 2 ? 'b-ec' : i < 5 ? 'b-mask' : '') : '') + '">' + b + '</td>').join('') + '</tr>';
+        '<td data-g="' + groupOf(i) + '" class="' + (cls ? (i < 2 ? 'b-ec' : i < 5 ? 'b-mask' : '') : '') + '">' + b + '</td>').join('') + '</tr>';
     }
 
     function renderFormat() {
       fmtBox.innerHTML =
+        '<p class="fmt-tip">Zeige auf ein Bit oder eine Zeile, um die Felder im Bild zu sehen.</p>' +
         '<div class="tablewrap"><table class="bits">' +
         bitRow('gelesen', A.fmtRead) +
         bitRow('XOR feste Maske', A.fmtMask) +
         bitRow('Ergebnis', A.fmt, true) +
         '</table></div>' +
-        '<p class="fmt-line"><span class="chip b-ec">' + A.fmt[0] + A.fmt[1] + '</span> Fehlerkorrektur-Stufe ' + A.ec +
+        '<p class="fmt-line" data-g="ec"><span class="chip b-ec">' + A.fmt[0] + A.fmt[1] + '</span> Fehlerkorrektur-Stufe ' + A.ec +
         ', etwa ' + A.ecPercent + ' der Bytes dürfen beschädigt sein. Im Bild sieht man das direkt in Zeile 8 an den ' +
-        'ersten beiden Feldern links: ' + (A.fmtRead[0] ? 'schwarz' : 'weiss') + ', ' + (A.fmtRead[1] ? 'schwarz' : 'weiss') +
+        'ersten beiden Feldern links: ' + colour(A.fmtRead[0]) + ', ' + colour(A.fmtRead[1]) +
         ' (' + A.fmtRead[0] + A.fmtRead[1] + '). Nach dem XOR mit 10 wird daraus ' + A.fmt[0] + A.fmt[1] + '.</p>' +
-        '<p class="fmt-line"><span class="chip b-mask">' + A.fmt[2] + A.fmt[3] + A.fmt[4] + '</span> Maske ' + A.mask +
+        '<p class="fmt-line" data-g="mask"><span class="chip b-mask">' + A.fmt[2] + A.fmt[3] + A.fmt[4] + '</span> Maske ' + A.mask +
         ': Ein Feld wird umgedreht, wenn ' + A.maskText + ' (Z = Zeile, S = Spalte).</p>' +
-        '<p class="fmt-line"><span class="chip">' + A.fmt.slice(5).join('') + '</span> Prüfbits, damit der Scanner Lesefehler in der Format-Information erkennt.</p>';
+        '<p class="fmt-line" data-g="bch"><span class="chip">' + A.fmt.slice(5).join('') + '</span> Prüfbits, damit der Scanner Lesefehler in der Format-Information erkennt.</p>';
     }
 
     function renderLegend() {
@@ -910,28 +949,54 @@
     }
 
     tbody.addEventListener('pointerover', (e) => {
-      const tr = e.target.closest('tr'); if (!tr || !A) return;
+      const tr = e.target.closest('tr'); if (!tr || !A || locked) return;
       const k = +tr.dataset.k;
-      if (k !== highlight) { highlight = k; probe.textContent = byteTitle(k) + ' ist auf dem Bild blau umrandet.'; draw(); }
+      probe.textContent = byteTitle(k) + ' ist im Bild blau umrandet.';
+      setHover(byteHL(k));
     });
     tbody.addEventListener('click', (e) => {
       const tr = e.target.closest('tr'); if (!tr || !A) return;
-      locked = +tr.dataset.k === locked ? -1 : +tr.dataset.k;
-      probe.textContent = locked >= 0 ? byteTitle(locked) + ' ist auf dem Bild blau umrandet. Tippe nochmals, um es zu lösen.' : PROBE_HINT;
+      const hl = byteHL(+tr.dataset.k);
+      locked = locked && locked.key === hl.key ? null : hl;
+      probe.textContent = locked ? byteTitle(+tr.dataset.k) + ' ist im Bild blau umrandet. Tippe nochmals, um es zu lösen.' : PROBE_HINT;
       draw();
     });
     tbody.addEventListener('pointerleave', () => {
-      if (!A || locked >= 0) return;
-      highlight = -1; probe.textContent = PROBE_HINT; draw();
+      if (!A || locked) return;
+      probe.textContent = PROBE_HINT; setHover(null);
+    });
+
+    // Format-Information: Bits und Zeilen zeigen ihre Felder im Bild
+    fmtBox.addEventListener('pointerover', (e) => {
+      const el = e.target.closest('[data-g]'); if (!el || !A || locked) return;
+      probe.textContent = fmtGroupText(el.dataset.g) + ' Die passenden Felder beider Kopien sind blau umrandet.';
+      setHover(fmtHL(el.dataset.g));
+    });
+    fmtBox.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-g]'); if (!el || !A) return;
+      const hl = fmtHL(el.dataset.g);
+      locked = locked && locked.key === hl.key ? null : hl;
+      probe.textContent = locked ? fmtGroupText(el.dataset.g) + ' Die passenden Felder beider Kopien sind blau umrandet.' : PROBE_HINT;
+      draw();
+    });
+    fmtBox.addEventListener('pointerleave', () => {
+      if (!A || locked) return;
+      probe.textContent = PROBE_HINT; setHover(null);
     });
     details.addEventListener('toggle', () => { if (details.open && tableDirty && A) renderTable(); });
 
+    let lastSig = '';
     function show(qr, fgColor) {
-      A = QRAnatomy.analyze(qr);
+      const next = QRAnatomy.analyze(qr);
+      const sig = next.v + '|' + next.ec + '|' + next.mask + '|' + next.text;
+      // Gleicher Code wie vorher (z. B. nur Fokus gewechselt): Markierung behalten
+      if (A && sig === lastSig) { A = Object.assign(next, { dark: A.dark }); A.dark = (r, c) => (qr.isDark(r, c) ? 1 : 0); return; }
+      lastSig = sig;
+      A = next;
       A.dark = (r, c) => (qr.isDark(r, c) ? 1 : 0);
       fg = fgColor;
       dpr = Math.min(window.devicePixelRatio || 1, 2);
-      highlight = -1; locked = -1;
+      hover = null; locked = null;
       card.hidden = false;
       fitSize();
       probe.textContent = PROBE_HINT;
@@ -962,7 +1027,7 @@
       }, 150);
     });
 
-    function hide() { A = null; card.hidden = true; }
+    function hide() { A = null; lastSig = ''; card.hidden = true; }
 
     return { show, hide };
   })();
