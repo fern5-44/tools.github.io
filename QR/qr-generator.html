@@ -856,7 +856,9 @@
         bitRow('Ergebnis', A.fmt, true) +
         '</table></div>' +
         '<p class="fmt-line"><span class="chip b-ec">' + A.fmt[0] + A.fmt[1] + '</span> Fehlerkorrektur-Stufe ' + A.ec +
-        ', etwa ' + A.ecPercent + ' der Bytes dürfen beschädigt sein.</p>' +
+        ', etwa ' + A.ecPercent + ' der Bytes dürfen beschädigt sein. Im Bild sieht man das direkt in Zeile 8 an den ' +
+        'ersten beiden Feldern links: ' + (A.fmtRead[0] ? 'schwarz' : 'weiss') + ', ' + (A.fmtRead[1] ? 'schwarz' : 'weiss') +
+        ' (' + A.fmtRead[0] + A.fmtRead[1] + '). Nach dem XOR mit 10 wird daraus ' + A.fmt[0] + A.fmt[1] + '.</p>' +
         '<p class="fmt-line"><span class="chip b-mask">' + A.fmt[2] + A.fmt[3] + A.fmt[4] + '</span> Maske ' + A.mask +
         ': Ein Feld wird umgedreht, wenn ' + A.maskText + ' (Z = Zeile, S = Spalte).</p>' +
         '<p class="fmt-line"><span class="chip">' + A.fmt.slice(5).join('') + '</span> Prüfbits, damit der Scanner Lesefehler in der Format-Information erkennt.</p>';
