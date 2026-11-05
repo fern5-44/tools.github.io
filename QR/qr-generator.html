@@ -177,6 +177,73 @@
       text-align: center;
     }
 
+    /* Aufbau des Codes */
+    #anatomy[hidden] { display: none; }
+    .anat-summary { font-size: 13px; line-height: 1.55; color: #555; margin: 0 0 12px; }
+    .readback { font-family: 'DM Mono', monospace; font-size: 12px; color: #185fa5; word-break: break-all; }
+    .map-stage { min-height: 0; padding: 10px; }
+    #map { display: block; width: 100%; max-width: 560px; height: auto; touch-action: none; cursor: crosshair; }
+    .probe {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #1a1a18;
+      background: #e6f1fb;
+      border-radius: 8px;
+      padding: 9px 12px;
+      margin: 10px 0 14px;
+      min-height: 4.6em;
+    }
+    .legend {
+      list-style: none;
+      margin: 0 0 18px;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: #666;
+    }
+    .legend li { display: flex; gap: 9px; align-items: flex-start; }
+    .legend b { color: #1a1a18; font-weight: 500; }
+    .legend .cnt { color: #999; }
+    .legend .sw { flex: none; width: 16px; height: 16px; border-radius: 4px; margin-top: 1px; }
+    .sub { font-size: 14px; font-weight: 500; margin: 6px 0 8px; }
+    .tablewrap { overflow-x: auto; }
+    table.bits { border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 12px; margin-bottom: 10px; }
+    table.bits th { text-align: left; font-weight: 400; color: #888; padding: 3px 12px 3px 0; white-space: nowrap; font-family: system-ui, sans-serif; }
+    table.bits td { text-align: center; width: 22px; padding: 3px 0; }
+    table.bits tr:last-child td { font-weight: 500; border-top: 0.5px solid #ccc; }
+    .b-ec { background: #fde2c8; }
+    .b-mask { background: #d6e6fa; }
+    .fmt-line { font-size: 13px; line-height: 1.5; color: #444; margin: 0 0 6px; }
+    .chip {
+      display: inline-block;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 1px 6px;
+      border-radius: 5px;
+      background: #f0f0ee;
+      margin-right: 4px;
+    }
+    details { margin-top: 16px; }
+    summary { font-size: 14px; font-weight: 500; cursor: pointer; padding: 4px 0; }
+    summary:focus-visible { outline: 2px solid #185fa5; outline-offset: 2px; border-radius: 4px; }
+    table.bytes { border-collapse: collapse; width: 100%; font-size: 12.5px; margin-top: 8px; }
+    table.bytes th { text-align: left; font-weight: 500; color: #888; padding: 6px 8px; border-bottom: 0.5px solid #ddd; white-space: nowrap; }
+    table.bytes td { padding: 6px 8px; border-bottom: 0.5px solid #eee; vertical-align: top; line-height: 1.45; }
+    table.bytes tr { cursor: pointer; }
+    table.bytes tbody tr:hover { background: #f5f9fd; }
+    table.bytes .mono { font-family: 'DM Mono', monospace; white-space: nowrap; }
+    table.bytes .ec-row { color: #888; }
+    .seg { padding: 1px 3px; border-radius: 4px; }
+    .seg-mode { background: #fde2c8; }
+    .seg-len { background: #f7efb5; }
+    .seg-char { background: #d4efdc; }
+    .seg-term, .seg-zero { background: #eadcf3; }
+    .seg-pad { background: #ececea; }
+    .seg-other { background: #ececea; }
+
     /* ── Shared nav chrome ── */
     .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:400; }
     .overlay.show { display:block; }
@@ -207,6 +274,7 @@
       .topnav { padding: 0 1.25rem; }
       .topnav-links { display:none; }
       .actions { flex-wrap: wrap; }
+      .legend { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -377,6 +445,27 @@
     </div>
   </div>
 
+  <div class="card" id="anatomy" hidden>
+    <div class="card-num">Aufbau des Codes</div>
+    <p class="anat-summary" id="anat-summary"></p>
+    <div class="stage map-stage"><canvas id="map" aria-label="Farbige Karte der Bereiche im QR-Code"></canvas></div>
+    <p class="probe" id="probe" aria-live="polite"></p>
+    <ul class="legend" id="legend"></ul>
+
+    <h2 class="sub">Format-Information</h2>
+    <div id="fmt"></div>
+
+    <details id="bytes-details">
+      <summary>Alle <span id="bytes-count"></span> Bytes einzeln anzeigen</summary>
+      <div class="tablewrap">
+        <table class="bytes" id="bytes">
+          <thead><tr><th>Nr.</th><th class="col-stream">im Code</th><th>Bits</th><th>Bedeutung</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+
   <p class="hint">Vor dem Drucken einmal mit der Handykamera testen. Faustregel: Leseabstand ÷ 10 = Kantenlänge.</p>
 </div>
 
@@ -393,6 +482,488 @@
 <script>
   function toggleNav(){var s=document.getElementById('sidenav'),o=document.getElementById('overlay'),b=document.getElementById('hamburger');var open=s.classList.contains('open');s.classList.toggle('open',!open);o.classList.toggle('show',!open);b.classList.toggle('open',!open);}
   function closeNav(){document.getElementById('sidenav').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.getElementById('hamburger').classList.remove('open');}
+</script>
+<script>
+  // ── Aufbau-Analyse: liest den fertigen Code Feld für Feld wieder aus ──
+  const QRAnatomy = (function () {
+    // Reed-Solomon-Blöcke je Version und Stufe (L, M, Q, H):
+    // [Anzahl, Bytes gesamt, davon Daten, (Anzahl, gesamt, Daten)]
+    const RS = [[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]];
+    const LEVELS = ['L', 'M', 'Q', 'H'];
+    const EC_BY_BITS = { '01': 'L', '00': 'M', '11': 'Q', '10': 'H' };
+    const EC_PERCENT = { L: '7 %', M: '15 %', Q: '25 %', H: '30 %' };
+    const FORMAT_MASK = [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0];
+    const MASKS = [
+      { f: (r, c) => (r + c) % 2 === 0, t: '(Z + S) mod 2 = 0' },
+      { f: (r, c) => r % 2 === 0, t: 'Z mod 2 = 0' },
+      { f: (r, c) => c % 3 === 0, t: 'S mod 3 = 0' },
+      { f: (r, c) => (r + c) % 3 === 0, t: '(Z + S) mod 3 = 0' },
+      { f: (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0, t: '(⌊Z/2⌋ + ⌊S/3⌋) mod 2 = 0' },
+      { f: (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0, t: '(Z·S mod 2) + (Z·S mod 3) = 0' },
+      { f: (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0, t: '((Z·S mod 2) + (Z·S mod 3)) mod 2 = 0' },
+      { f: (r, c) => (((r + c) % 2) + ((r * c) % 3)) % 2 === 0, t: '((Z + S) mod 2 + (Z·S mod 3)) mod 2 = 0' }
+    ];
+
+    function alignmentCentres(v, n) {
+      if (v === 1) return [];
+      const num = Math.floor(v / 7) + 2;
+      const step = v === 32 ? 26 : Math.ceil((v * 4 + 4) / (num * 2 - 2)) * 2;
+      const res = [6];
+      for (let p = n - 7; res.length < num; p -= step) res.splice(1, 0, p);
+      return res;
+    }
+
+    function charName(ch) {
+      if (ch === ' ') return 'Leerzeichen';
+      if (ch === '\n') return 'Zeilenumbruch';
+      if (ch === '\r') return 'Wagenrücklauf';
+      if (ch === '\t') return 'Tabulator';
+      return '„' + ch + '“';
+    }
+
+    function analyze(qr) {
+      const n = qr.getModuleCount();
+      const v = (n - 17) / 4;
+      const dark = (r, c) => (qr.isDark(r, c) ? 1 : 0);
+      const kind = Array.from({ length: n }, () => new Array(n).fill(null));
+      const inFinder = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+
+      // Eckquadrate und weisser Trennrand
+      [[0, 0], [0, n - 7], [n - 7, 0]].forEach(([r0, c0]) => {
+        for (let r = -1; r <= 7; r++) for (let c = -1; c <= 7; c++) {
+          const rr = r0 + r, cc = c0 + c;
+          if (rr < 0 || cc < 0 || rr >= n || cc >= n) continue;
+          kind[rr][cc] = r >= 0 && r <= 6 && c >= 0 && c <= 6 ? 'finder' : 'sep';
+        }
+      });
+      // Timing-Linien
+      for (let i = 8; i < n - 8; i++) { kind[6][i] = 'timing'; kind[i][6] = 'timing'; }
+      // Ausrichtungsquadrate
+      const ac = alignmentCentres(v, n);
+      for (const r of ac) for (const c of ac) {
+        if (inFinder(r, c)) continue;
+        for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) kind[r + i][c + j] = 'align';
+      }
+      // Format-Information (2 Kopien), Dark Module, Versions-Information
+      const fmt1 = [0, 1, 2, 3, 4, 5, 7, 8].map((c) => [8, c]).concat([7, 5, 4, 3, 2, 1, 0].map((r) => [r, 8]));
+      const fmt2 = [0, 1, 2, 3, 4, 5, 6].map((i) => [n - 1 - i, 8]).concat([0, 1, 2, 3, 4, 5, 6, 7].map((i) => [8, n - 8 + i]));
+      const fmtCopy = {};
+      fmt1.forEach(([r, c], i) => { kind[r][c] = 'format'; fmtCopy[r + ',' + c] = [1, i]; });
+      fmt2.forEach(([r, c], i) => { kind[r][c] = 'format'; fmtCopy[r + ',' + c] = [2, i]; });
+      kind[n - 8][8] = 'darkmod';
+      if (v >= 7) for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) {
+        kind[i][n - 11 + j] = 'version';
+        kind[n - 11 + j][i] = 'version';
+      }
+
+      // Format-Information lesen
+      const fmtRead = fmt1.map(([r, c]) => dark(r, c));
+      const fmtRead2 = fmt2.map(([r, c]) => dark(r, c));
+      const fmt = fmtRead.map((b, i) => b ^ FORMAT_MASK[i]);
+      const ec = EC_BY_BITS['' + fmt[0] + fmt[1]];
+      const mask = fmt[2] * 4 + fmt[3] * 2 + fmt[4];
+      const maskFn = MASKS[mask].f;
+
+      // Blöcke und Verzahnung
+      const entry = RS[(v - 1) * 4 + LEVELS.indexOf(ec)];
+      const blocks = [];
+      for (let k = 0; k < entry.length; k += 3)
+        for (let i = 0; i < entry[k]; i++) blocks.push({ total: entry[k + 1], data: entry[k + 2] });
+      const dataOffset = [];
+      let dataTotal = 0, total = 0;
+      blocks.forEach((b) => { dataOffset.push(dataTotal); dataTotal += b.data; total += b.total; });
+      const ecPer = blocks[0].total - blocks[0].data;
+      const stream = [];
+      const maxData = Math.max(...blocks.map((b) => b.data));
+      for (let i = 0; i < maxData; i++) blocks.forEach((b, bi) => {
+        if (i < b.data) stream.push({ type: 'data', block: bi, logical: dataOffset[bi] + i });
+      });
+      for (let i = 0; i < ecPer; i++) blocks.forEach((b, bi) => {
+        stream.push({ type: 'ec', block: bi, index: i });
+      });
+
+      // Zickzack: Datenfelder in Lesereihenfolge
+      const cell = Array.from({ length: n }, () => new Array(n).fill(null));
+      const byteCells = stream.map(() => []);
+      const values = new Array(total).fill(0);
+      let j = 0, up = true;
+      for (let c = n - 1; c > 0; c -= 2) {
+        if (c === 6) c--;
+        for (let t = 0; t < n; t++) {
+          const r = up ? n - 1 - t : t;
+          for (const cc of [c, c - 1]) {
+            if (kind[r][cc]) continue;
+            const raw = dark(r, cc);
+            const m = maskFn(r, cc) ? 1 : 0;
+            const val = raw ^ m;
+            const k = Math.floor(j / 8);
+            if (k < total) {
+              kind[r][cc] = stream[k].type;
+              values[k] = (values[k] << 1) | val;
+              byteCells[k].push([r, cc]);
+              cell[r][cc] = { k, bit: j % 8, raw, m, val };
+            } else {
+              kind[r][cc] = 'rem';
+              cell[r][cc] = { raw, m, val };
+            }
+            j++;
+          }
+        }
+        up = !up;
+      }
+
+      // Datenbytes in die richtige Reihenfolge bringen und auswerten
+      const dataBytes = new Array(dataTotal);
+      stream.forEach((s, k) => { if (s.type === 'data') dataBytes[s.logical] = values[k]; });
+      const bits = [];
+      dataBytes.forEach((b) => { for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1); });
+      const totalBits = bits.length;
+      const segs = [];
+      let p = 0;
+      const take = (len, type, label) => {
+        len = Math.max(0, Math.min(len, totalBits - p));
+        let val = 0;
+        for (let i = 0; i < len; i++) val = val * 2 + bits[p + i];
+        const s = { type, label, start: p, len, val };
+        if (len) segs.push(s);
+        p += len;
+        return s;
+      };
+      const modeSeg = take(4, 'mode', '');
+      const modeBits = modeSeg.val.toString(2).padStart(4, '0');
+      const payload = [];
+      if (modeSeg.val === 4) {
+        modeSeg.label = 'Modus 0100 = Byte (normaler Text)';
+        const lenSeg = take(v < 10 ? 8 : 16, 'len', '');
+        const L = Math.min(lenSeg.val, Math.floor((totalBits - p) / 8));
+        lenSeg.label = 'Länge = ' + lenSeg.val + ' Bytes';
+        const charSegs = [];
+        for (let i = 0; i < L; i++) { const s = take(8, 'char', ''); payload.push(s.val); charSegs.push(s); }
+        // Zeichen zuordnen (UTF-8: ein Zeichen kann mehrere Bytes haben)
+        let i = 0;
+        while (i < payload.length) {
+          const b = payload[i];
+          const size = b >= 0xf0 ? 4 : b >= 0xe0 ? 3 : b >= 0xc0 ? 2 : 1;
+          const slice = payload.slice(i, i + size);
+          let ch;
+          try { ch = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(slice)); }
+          catch (e) { ch = '?'; }
+          for (let q = 0; q < size && i + q < payload.length; q++) {
+            charSegs[i + q].label = size > 1
+              ? charName(ch) + ' (UTF-8, Byte ' + (q + 1) + ' von ' + size + ')'
+              : charName(ch) + ' = ' + payload[i + q];
+          }
+          i += size;
+        }
+        take(4, 'term', 'Ende-Markierung');
+        if (p % 8) take(8 - (p % 8), 'zero', 'Nullen bis zur Byte-Grenze');
+        let alt = 0;
+        while (p < totalBits) {
+          const s = take(8, 'pad', '');
+          s.label = 'Füllbyte ' + s.val + (s.val === (alt ? 17 : 236) ? '' : ' (unerwartet)');
+          alt ^= 1;
+        }
+      } else {
+        modeSeg.label = 'Modus ' + modeBits;
+        take(totalBits - p, 'other', 'Daten in einem anderen Modus');
+      }
+      let text = '';
+      try { text = new TextDecoder('utf-8').decode(new Uint8Array(payload)); } catch (e) {}
+
+      // Segment-Stücke pro Datenbyte
+      function piecesOf(d) {
+        const a = d * 8, b = a + 8, out = [];
+        for (const s of segs) {
+          const s0 = s.start, s1 = s.start + s.len;
+          if (s1 <= a || s0 >= b) continue;
+          const lo = Math.max(a, s0), hi = Math.min(b, s1);
+          const first = Math.floor(s0 / 8), last = Math.floor((s1 - 1) / 8);
+          let label = s.label;
+          if (last > first) label += ' (Teil ' + (d - first + 1) + '/' + (last - first + 1) + ')';
+          out.push({ type: s.type, bits: bits.slice(lo, hi).join(''), label });
+        }
+        return out;
+      }
+      function segAtBit(pos) {
+        return segs.find((s) => pos >= s.start && pos < s.start + s.len);
+      }
+
+      return {
+        n, v, ec, ecPercent: EC_PERCENT[ec], mask, maskText: MASKS[mask].t, maskFn,
+        fmtRead, fmtRead2, fmtMask: FORMAT_MASK, fmt, fmtCopy,
+        blocks, ecPer, dataTotal, total, stream, values, byteCells,
+        kind, cell, dataBytes, segs, piecesOf, segAtBit, text
+      };
+    }
+
+    return { analyze };
+  })();
+  // ── Aufbau-Karte: zeichnet die Bedeutung jedes Feldes ──
+  const Anatomy = (function () {
+    const card = document.getElementById('anatomy');
+    const map = document.getElementById('map');
+    const mctx = map.getContext('2d');
+    const probe = document.getElementById('probe');
+    const legend = document.getElementById('legend');
+    const fmtBox = document.getElementById('fmt');
+    const summary = document.getElementById('anat-summary');
+    const details = document.getElementById('bytes-details');
+    const tbody = document.querySelector('#bytes tbody');
+    const bytesCount = document.getElementById('bytes-count');
+    const colStream = document.querySelectorAll('.col-stream');
+    const PROBE_HINT = 'Fahre über ein Feld oder tippe darauf, um zu sehen, wozu es gehört.';
+
+    const COLORS = {
+      finder:  ['#ef8f7a', 'Eckquadrate', 'Daran findet der Scanner den Code und erkennt, wie herum er liegt.'],
+      sep:     ['#fbe0d8', 'Trennrand', 'Weisser Rand, der die Eckquadrate vom Rest trennt.'],
+      timing:  ['#f2c14e', 'Timing-Linien', 'Abwechselnd schwarz und weiss. Daran zählt der Scanner Zeilen und Spalten ab.'],
+      align:   ['#f59e5b', 'Ausrichtungsquadrate', 'Helfen dem Scanner, wenn der Code verzerrt oder gewölbt ist.'],
+      format:  ['#5b8def', 'Format-Information', 'Fehlerkorrektur-Stufe und Maske, zweimal gespeichert.'],
+      version: ['#a7c2f7', 'Versions-Information', 'Die Versionsnummer, ab Version 7 zweimal gespeichert.'],
+      darkmod: ['#9b59b6', 'Dark Module', 'Ist bei jedem QR-Code schwarz und hat keine weitere Bedeutung.'],
+      data:    ['#3fa66a', 'Datenbytes', 'Dein Inhalt: Modus, Länge, Zeichen, Ende-Markierung und Füllbytes.'],
+      ec:      ['#8e8e8a', 'Fehlerkorrektur-Bytes', 'Reed-Solomon-Bytes, mit denen beschädigte Stellen repariert werden.'],
+      rem:     ['#e4e4e0', 'Restbits', 'Übriger Platz, der nicht für ganze Bytes reicht. Wird ignoriert.']
+    };
+    const ALT = { data: '#a9dbb8', ec: '#cfcfcb' };
+
+    let A = null, fg = '#1a1a18', cellPx = 0, dpr = 1, highlight = -1, locked = -1, tableDirty = true;
+
+    function colorAt(r, c) {
+      const k = A.kind[r][c];
+      if ((k === 'data' || k === 'ec') && A.cell[r][c].k % 2 === 1) return ALT[k];
+      return COLORS[k][0];
+    }
+
+    function draw() {
+      const n = A.n;
+      const size = cellPx * n;
+      map.width = size * dpr;
+      map.height = size * dpr;
+      map.style.aspectRatio = '1 / 1';
+      mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const inner = Math.max(1, Math.round(cellPx * 0.5));
+      const off = (cellPx - inner) / 2;
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+        mctx.fillStyle = colorAt(r, c);
+        mctx.fillRect(c * cellPx, r * cellPx, cellPx, cellPx);
+        if (A.cell[r][c] ? A.cell[r][c].raw : A.dark(r, c)) {
+          mctx.fillStyle = fg;
+          mctx.fillRect(c * cellPx + off, r * cellPx + off, inner, inner);
+        }
+      }
+      if (cellPx >= 9) {
+        mctx.strokeStyle = 'rgba(255,255,255,.7)';
+        mctx.lineWidth = 1;
+        mctx.beginPath();
+        for (let i = 0; i <= n; i++) {
+          mctx.moveTo(0, i * cellPx); mctx.lineTo(size, i * cellPx);
+          mctx.moveTo(i * cellPx, 0); mctx.lineTo(i * cellPx, size);
+        }
+        mctx.stroke();
+      }
+      // Byte-Nummern beim ersten Feld jedes Bytes
+      if (cellPx >= 16) {
+        mctx.font = '600 ' + Math.round(cellPx * 0.42) + 'px system-ui, sans-serif';
+        mctx.textBaseline = 'top';
+        mctx.lineJoin = 'round';
+        A.byteCells.forEach((cells, k) => {
+          if (!cells.length) return;
+          const [r, c] = cells[0];
+          const x = c * cellPx + 2, y = r * cellPx + 2;
+          mctx.lineWidth = 3;
+          mctx.strokeStyle = 'rgba(0,0,0,.75)';
+          mctx.strokeText(k + 1, x, y);
+          mctx.fillStyle = '#fff';
+          mctx.fillText(k + 1, x, y);
+        });
+      }
+      const hk = locked >= 0 ? locked : highlight;
+      if (hk >= 0 && A.byteCells[hk]) {
+        mctx.strokeStyle = '#185fa5';
+        mctx.lineWidth = Math.max(2, cellPx * 0.14);
+        A.byteCells[hk].forEach(([r, c]) => {
+          mctx.strokeRect(c * cellPx + 1, r * cellPx + 1, cellPx - 2, cellPx - 2);
+        });
+      }
+    }
+
+    function byteTitle(k) {
+      const s = A.stream[k];
+      if (s.type === 'data') {
+        let t = 'Byte ' + (k + 1) + ' (Daten';
+        if (A.blocks.length > 1) t += ', Nr. ' + (s.logical + 1) + ' der Nachricht, Block ' + (s.block + 1);
+        return t + ')';
+      }
+      let t = 'Byte ' + (k + 1) + ' (Fehlerkorrektur';
+      if (A.blocks.length > 1) t += ', Block ' + (s.block + 1);
+      return t + ')';
+    }
+
+    function describe(r, c) {
+      const where = 'Zeile ' + r + ', Spalte ' + c + ': ';
+      const k = A.kind[r][c];
+      const info = A.cell[r][c];
+      if (k === 'data' || k === 'ec') {
+        const s = A.stream[info.k];
+        let t = where + byteTitle(info.k) + ', Bit ' + (info.bit + 1) + ' von 8. ';
+        t += 'Im Bild ' + (info.raw ? 'schwarz' : 'weiss') + ', Maske ' + A.mask +
+             (info.m ? ' dreht hier um' : ' dreht hier nicht um') + ', also Bit ' + info.val + '.';
+        if (s.type === 'data') {
+          const seg = A.segAtBit(s.logical * 8 + info.bit);
+          if (seg) t += ' Gehört zu: ' + seg.label + '.';
+        }
+        return { text: t, k: info.k };
+      }
+      if (k === 'format') {
+        const [copy, i] = A.fmtCopy[r + ',' + c];
+        return { text: where + 'Format-Information, Kopie ' + copy + ', Bit ' + (i + 1) + ' von 15. ' +
+          (i < 2 ? 'Gehört zur Fehlerkorrektur-Stufe.' : i < 5 ? 'Gehört zur Maskennummer.' : 'Prüfbit (BCH-Code).'), k: -1 };
+      }
+      if (k === 'rem') return { text: where + COLORS.rem[1] + '. ' + COLORS.rem[2], k: -1 };
+      return { text: where + COLORS[k][1] + '. ' + COLORS[k][2], k: -1 };
+    }
+
+    function cellFromEvent(e) {
+      const rect = map.getBoundingClientRect();
+      const c = Math.floor(((e.clientX - rect.left) / rect.width) * A.n);
+      const r = Math.floor(((e.clientY - rect.top) / rect.height) * A.n);
+      if (r < 0 || c < 0 || r >= A.n || c >= A.n) return null;
+      return [r, c];
+    }
+
+    function showProbe(rc) {
+      if (!rc) { probe.textContent = PROBE_HINT; if (highlight !== -1) { highlight = -1; draw(); } return; }
+      const d = describe(rc[0], rc[1]);
+      probe.textContent = d.text;
+      if (d.k !== highlight) { highlight = d.k; draw(); }
+    }
+
+    map.addEventListener('pointermove', (e) => { if (A && locked < 0) showProbe(cellFromEvent(e)); });
+    map.addEventListener('pointerleave', (e) => { if (A && locked < 0 && e.pointerType === 'mouse') showProbe(null); });
+    map.addEventListener('pointerdown', (e) => { if (A) { locked = -1; showProbe(cellFromEvent(e)); } });
+
+    function bitRow(label, arr, cls) {
+      return '<tr><th>' + label + '</th>' + arr.map((b, i) =>
+        '<td class="' + (cls ? (i < 2 ? 'b-ec' : i < 5 ? 'b-mask' : '') : '') + '">' + b + '</td>').join('') + '</tr>';
+    }
+
+    function renderFormat() {
+      fmtBox.innerHTML =
+        '<div class="tablewrap"><table class="bits">' +
+        bitRow('gelesen', A.fmtRead) +
+        bitRow('XOR feste Maske', A.fmtMask) +
+        bitRow('Ergebnis', A.fmt, true) +
+        '</table></div>' +
+        '<p class="fmt-line"><span class="chip b-ec">' + A.fmt[0] + A.fmt[1] + '</span> Fehlerkorrektur-Stufe ' + A.ec +
+        ', etwa ' + A.ecPercent + ' der Bytes dürfen beschädigt sein.</p>' +
+        '<p class="fmt-line"><span class="chip b-mask">' + A.fmt[2] + A.fmt[3] + A.fmt[4] + '</span> Maske ' + A.mask +
+        ': Ein Feld wird umgedreht, wenn ' + A.maskText + ' (Z = Zeile, S = Spalte).</p>' +
+        '<p class="fmt-line"><span class="chip">' + A.fmt.slice(5).join('') + '</span> Prüfbits, damit der Scanner Lesefehler in der Format-Information erkennt.</p>';
+    }
+
+    function renderLegend() {
+      const counts = {};
+      for (let r = 0; r < A.n; r++) for (let c = 0; c < A.n; c++) {
+        const k = A.kind[r][c]; counts[k] = (counts[k] || 0) + 1;
+      }
+      const order = ['finder', 'sep', 'timing', 'align', 'format', 'version', 'darkmod', 'data', 'ec', 'rem'];
+      legend.innerHTML = order.filter((k) => counts[k]).map((k) => {
+        let extra = counts[k] + (counts[k] === 1 ? ' Feld' : ' Felder');
+        if (k === 'data') extra = A.dataTotal + ' Bytes';
+        if (k === 'ec') extra = (A.total - A.dataTotal) + ' Bytes';
+        return '<li><span class="sw" style="background:' + COLORS[k][0] + '"></span>' +
+          '<span><b>' + COLORS[k][1] + '</b> <span class="cnt">' + extra + '</span><br>' + COLORS[k][2] + '</span></li>';
+      }).join('');
+    }
+
+    function esc(s) {
+      return s.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+    }
+
+    function renderTable() {
+      const multi = A.blocks.length > 1;
+      colStream.forEach((el) => (el.hidden = !multi));
+      const rows = [];
+      // Datenbytes in Nachrichten-Reihenfolge
+      const posOfLogical = [];
+      A.stream.forEach((s, k) => { if (s.type === 'data') posOfLogical[s.logical] = k; });
+      for (let d = 0; d < A.dataTotal; d++) {
+        const k = posOfLogical[d];
+        const pieces = A.piecesOf(d);
+        rows.push('<tr data-k="' + k + '"><td>' + (d + 1) + '</td>' +
+          (multi ? '<td>' + (k + 1) + '</td>' : '') +
+          '<td class="mono">' + pieces.map((p) => '<span class="seg seg-' + p.type + '">' + p.bits + '</span>').join(' ') + '</td>' +
+          '<td>' + pieces.map((p) => esc(p.label)).join('<br>') + '</td></tr>');
+      }
+      A.stream.forEach((s, k) => {
+        if (s.type !== 'ec') return;
+        rows.push('<tr class="ec-row" data-k="' + k + '"><td>' + (k + 1) + '</td>' +
+          (multi ? '<td>' + (k + 1) + '</td>' : '') +
+          '<td class="mono">' + A.values[k].toString(2).padStart(8, '0') + '</td>' +
+          '<td>Fehlerkorrektur' + (multi ? ', Block ' + (s.block + 1) : '') + '</td></tr>');
+      });
+      tbody.innerHTML = rows.join('');
+      tableDirty = false;
+    }
+
+    tbody.addEventListener('pointerover', (e) => {
+      const tr = e.target.closest('tr'); if (!tr || !A) return;
+      const k = +tr.dataset.k;
+      if (k !== highlight) { highlight = k; probe.textContent = byteTitle(k) + ' ist auf dem Bild blau umrandet.'; draw(); }
+    });
+    tbody.addEventListener('click', (e) => {
+      const tr = e.target.closest('tr'); if (!tr || !A) return;
+      locked = +tr.dataset.k === locked ? -1 : +tr.dataset.k;
+      probe.textContent = locked >= 0 ? byteTitle(locked) + ' ist auf dem Bild blau umrandet. Tippe nochmals, um es zu lösen.' : PROBE_HINT;
+      draw();
+    });
+    tbody.addEventListener('pointerleave', () => {
+      if (!A || locked >= 0) return;
+      highlight = -1; probe.textContent = PROBE_HINT; draw();
+    });
+    details.addEventListener('toggle', () => { if (details.open && tableDirty && A) renderTable(); });
+
+    function show(qr, fgColor) {
+      A = QRAnatomy.analyze(qr);
+      A.dark = (r, c) => (qr.isDark(r, c) ? 1 : 0);
+      fg = fgColor;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      highlight = -1; locked = -1;
+      card.hidden = false;
+      fitSize();
+      probe.textContent = PROBE_HINT;
+      summary.innerHTML = 'Version ' + A.v + ' mit ' + A.n + ' × ' + A.n + ' Feldern. ' +
+        A.total + ' Bytes haben Platz: ' + A.dataTotal + ' für Daten, ' + (A.total - A.dataTotal) + ' für die Fehlerkorrektur' +
+        (A.blocks.length > 1 ? ', aufgeteilt auf ' + A.blocks.length + ' Blöcke. Die Bytes der Blöcke sind abwechselnd verzahnt.' : '.') +
+        '<br>Aus dem Code zurückgelesen: <span class="readback">' + esc(A.text.length > 120 ? A.text.slice(0, 120) + ' …' : A.text) + '</span>';
+      draw();
+      renderFormat();
+      renderLegend();
+      bytesCount.textContent = A.total;
+      tableDirty = true;
+      if (details.open) renderTable();
+    }
+
+    function fitSize() {
+      const avail = Math.min(560, (map.parentElement.clientWidth || 560) - 20);
+      cellPx = Math.max(2, Math.floor(avail / A.n));
+    }
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!A) return;
+        const old = cellPx;
+        fitSize();
+        if (cellPx !== old) draw();
+      }, 150);
+    });
+
+    function hide() { A = null; card.hidden = true; }
+
+    return { show, hide };
+  })();
 </script>
 <script>
 (function () {
@@ -485,6 +1056,7 @@
     meta.textContent = '';
     meta.className = 'meta';
     [btnPng, btnSvg, btnCopy].forEach((b) => (b.disabled = true));
+    Anatomy.hide();
   }
 
   function render() {
@@ -541,6 +1113,8 @@
     }
     meta.style.whiteSpace = 'pre-line';
     meta.textContent = text;
+
+    try { Anatomy.show(qr, '#1a1a18'); } catch (e) { console.error(e); Anatomy.hide(); }
   }
 
   function svgString() {
@@ -586,7 +1160,7 @@
       render();
     })
   );
-  document.querySelectorAll('input, select, textarea').forEach((el) => {
+  document.querySelectorAll('.container input, .container select, .container textarea').forEach((el) => {
     el.addEventListener('input', render);
     el.addEventListener('change', render);
   });
