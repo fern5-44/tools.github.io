@@ -8,26 +8,27 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root { 
-  --bg:        #F0F2F5;
-  --bg-dark:   #E4E8EE;
-  --panel:     #FFFFFF;
-  --header-bg: #3A4255;
-  --silver:    #8A95A8;
-  --silver-lt: #B0B8C8;
-  --silver-gl: rgba(138,149,168,0.13);
-  --accent:    #7A8FA8;
-  --accent-lt: #A0B4C8;
-  --ink:       #2E3545;
-  --muted:     #8A95A8;
-  --border:    rgba(58,66,85,0.1);
-  --from:      #6A8FA8;
-  --to:        #A08878;
-  --warn:      #B5705A;
+:root {
+  --bg:        #F3ECE3;
+  --bg-dark:   #E6DACB;
+  --panel:     #FFFDFA;
+  --header-bg: #E8DCCB;
+  --silver:    #A39A90;
+  --silver-lt: #C8BFB4;
+  --silver-gl: rgba(163,154,144,0.14);
+  --accent:    #9A7656;
+  --accent-lt: #C2A486;
+  --ink:       #3B2E24;
+  --muted:     #8B7A69;
+  --border:    rgba(110,80,50,0.13);
+  --from:      #B8946F;
+  --to:        #7A5838;
+  --warn:      #B04A3A;
+  --sheen:     linear-gradient(115deg, rgba(255,255,255,0) 20%, rgba(255,255,255,0.75) 38%, rgba(255,255,255,0) 52%, rgba(255,255,255,0.35) 70%, rgba(255,255,255,0) 82%);
 }
 
 body {
-  background: var(--bg);
+  background: var(--bg) linear-gradient(180deg, #FAF6F1 0%, var(--bg) 340px, #EDE3D6 100%);
   color: var(--ink);
   font-family: 'DM Sans', sans-serif;
   min-height: 100vh;
@@ -37,21 +38,21 @@ body {
 /* ── Shared nav chrome ── */
 .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:400; }
 .overlay.show { display:block; }
-.sidenav { height:100%; width:0; position:fixed; z-index:500; top:0; left:0; background:var(--header-bg); border-right:0.5px solid rgba(237,240,244,.1); overflow-x:hidden; transition:width .25s cubic-bezier(.4,0,.2,1); padding-top:64px; }
+.sidenav { height:100%; width:0; position:fixed; z-index:500; top:0; left:0; background:#F1E8DD; border-right:0.5px solid var(--border); overflow-x:hidden; transition:width .25s cubic-bezier(.4,0,.2,1); padding-top:64px; }
 .sidenav.open { width:240px; }
-.sidenav-label { padding:1.1rem 28px 4px; font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent-lt); opacity:.85; }
-.sidenav a { display:block; padding:9px 28px; font-family:'DM Mono',monospace; font-size:13px; color:rgba(237,240,244,.5); text-decoration:none; letter-spacing:.02em; white-space:nowrap; transition:color .12s, padding-left .12s; }
-.sidenav a:hover { color:#EDF0F4; padding-left:32px; }
+.sidenav-label { padding:1.1rem 28px 4px; font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); opacity:.85; }
+.sidenav a { display:block; padding:9px 28px; font-family:'DM Mono',monospace; font-size:13px; color:#8B7A69; text-decoration:none; letter-spacing:.02em; white-space:nowrap; transition:color .12s, padding-left .12s; }
+.sidenav a:hover { color:#3B2E24; padding-left:32px; }
 .sidenav a.active { color:var(--accent-lt); }
-.sidenav .closebtn { position:absolute; top:16px; right:18px; font-family:'DM Mono',monospace; font-size:13px; color:rgba(237,240,244,.5); cursor:pointer; background:none; border:none; padding:0; transition:color .12s; }
+.sidenav .closebtn { position:absolute; top:16px; right:18px; font-family:'DM Mono',monospace; font-size:13px; color:#8B7A69; cursor:pointer; background:none; border:none; padding:0; transition:color .12s; }
 .sidenav .closebtn:hover { color:var(--accent-lt); }
-.topnav { position:fixed; top:0; left:0; right:0; height:50px; z-index:300; display:flex; align-items:center; padding:0 2rem; background:rgba(58,66,85,.9); backdrop-filter:blur(12px); border-bottom:0.5px solid rgba(237,240,244,.1); }
-.nav-logo { font-family:'DM Mono',monospace; font-size:12px; color:var(--accent-lt); text-decoration:none; letter-spacing:.08em; opacity:.9; margin-right:auto; }
+.topnav { position:fixed; top:0; left:0; right:0; height:50px; z-index:300; display:flex; align-items:center; padding:0 2rem; background:rgba(245,238,229,.85); backdrop-filter:blur(12px) saturate(1.2); border-bottom:0.5px solid var(--border); }
+.nav-logo { font-family:'DM Mono',monospace; font-size:12px; color:var(--accent); text-decoration:none; letter-spacing:.08em; opacity:.9; margin-right:auto; }
 .topnav-links { display:flex; list-style:none; align-items:center; gap:2px; }
-.topnav-links a { font-family:'DM Mono',monospace; font-size:11px; color:rgba(237,240,244,.5); text-decoration:none; padding:5px 12px; border-radius:5px; letter-spacing:.04em; transition:color .15s; }
-.topnav-links a:hover { color:#EDF0F4; }
+.topnav-links a { font-family:'DM Mono',monospace; font-size:11px; color:#8B7A69; text-decoration:none; padding:5px 12px; border-radius:5px; letter-spacing:.04em; transition:color .15s; }
+.topnav-links a:hover { color:#3B2E24; }
 .hamburger { display:flex; flex-direction:column; gap:5px; cursor:pointer; padding:6px; background:none; border:none; margin-left:8px; }
-.hamburger span { display:block; width:18px; height:1px; background:rgba(237,240,244,.55); transition:transform .2s, opacity .2s, background .12s; }
+.hamburger span { display:block; width:18px; height:1px; background:#8B7A69; transition:transform .2s, opacity .2s, background .12s; }
 .hamburger:hover span { background:var(--accent-lt); }
 .hamburger.open span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
 .hamburger.open span:nth-child(2){ opacity:0; }
@@ -59,31 +60,32 @@ body {
 
 /* ── Header ── */
 header {
-  background: linear-gradient(160deg, var(--header-bg) 0%, #2E3545 100%);
-  padding: 2.8rem 2rem 2.4rem;
+  background: linear-gradient(160deg, #F7F1E9 0%, #EEE3D6 55%, #F4ECE2 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 1.4rem 1.5rem 1.3rem;
   position: relative;
   overflow: hidden;
 }
 header::after {
   content: '';
   position: absolute; inset: 0;
-  background: repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.018) 60px, rgba(255,255,255,0.018) 61px);
+  background: linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.35) 45%, rgba(255,255,255,0) 58%);
   pointer-events: none;
 }
 .header-inner { max-width: 680px; margin: 0 auto; position: relative; z-index: 1; }
 .header-eyebrow {
-  font-size: 0.68rem; font-weight: 500;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--accent-lt); margin-bottom: 12px; opacity: 0.8;
+  font-size: 0.64rem; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 6px;
 }
 header h1 {
   font-family: 'DM Serif Display', serif;
   font-size: clamp(1.9rem, 4.5vw, 2.8rem);
-  color: #EDF0F4; line-height: 1.12;
-  margin-bottom: 10px; letter-spacing: -0.01em;
+  color: var(--ink); line-height: 1.12;
+  margin-bottom: 8px; letter-spacing: -0.01em;
 }
-header h1 em { font-style: italic; color: var(--accent-lt); }
-header p { font-size: 0.875rem; color: rgba(237,240,244,0.48); max-width: 420px; line-height: 1.6; }
+header h1 em { font-style: italic; color: var(--accent); }
+header p { font-size: 0.82rem; color: var(--muted); max-width: 520px; line-height: 1.5; }
 
 /* ── Main ── */
 main { max-width: 680px; margin: 0 auto; padding: 2.2rem 1.5rem 5rem; }
@@ -96,6 +98,8 @@ main { max-width: 680px; margin: 0 auto; padding: 2.2rem 1.5rem 5rem; }
 
 /* ── Instrument-Wahl ── */
 .pick-card {
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #F8F2EA 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 8px rgba(110,80,50,0.07);
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -144,7 +148,7 @@ main { max-width: 680px; margin: 0 auto; padding: 2.2rem 1.5rem 5rem; }
 
 /* ── Noten-Grid ── */
 .notes-section { margin-bottom: 1.6rem; }
-.section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; gap: 10px; }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
 .section-hint { font-size: 0.76rem; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
 .section-hint b { color: var(--ink); font-weight: 600; }
 .clear-link {
@@ -209,10 +213,10 @@ main { max-width: 680px; margin: 0 auto; padding: 2.2rem 1.5rem 5rem; }
 .res-warn {
   font-size: 0.68rem; font-weight: 500; line-height: 1.3;
   color: var(--warn);
-  background: rgba(181,112,90,0.1);
+  background: rgba(176,74,58,0.1);
   border-radius: 6px; padding: 4px 7px; margin: 0 6px 6px;
 }
-.note-result.moved, .note-result.out { border-color: rgba(181,112,90,0.45); }
+.note-result.moved, .note-result.out { border-color: rgba(176,74,58,0.45); }
 .fing { margin-top: 10px; padding: 0 6px; width: 100%; display: flex; justify-content: center; }
 .fing svg { display: block; width: 100%; max-width: 230px; height: auto; }
 .fing-none { font-size: 0.64rem; color: var(--silver-lt); }
@@ -225,20 +229,24 @@ main { max-width: 680px; margin: 0 auto; padding: 2.2rem 1.5rem 5rem; }
 
 /* ── Tonumfang ── */
 .range-section {
-  background: var(--header-bg);
+  background: var(--sheen), linear-gradient(160deg, #EFE4D6 0%, #E0CFBB 50%, #F2E9DE 100%);
+  border: 1px solid rgba(255,255,255,0.85);
+  box-shadow: 0 2px 10px rgba(110,80,50,0.1);
   border-radius: 14px;
   padding: 20px 20px 16px;
   margin-bottom: 1.6rem;
 }
-.range-section .card-label { color: rgba(237,240,244,0.45); }
-.range-title { font-family: 'DM Serif Display', serif; font-size: 1.25rem; color: #EDF0F4; margin: 6px 0 4px; }
-.range-sub { font-size: 0.78rem; color: rgba(237,240,244,0.5); line-height: 1.5; margin-bottom: 12px; }
+.range-section .card-label { color: var(--muted); }
+.range-title { font-family: 'DM Serif Display', serif; font-size: 1.25rem; color: var(--ink); margin: 6px 0 4px; }
+.range-sub { font-size: 0.78rem; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
 .range-scroll { overflow-x: auto; }
 svg.range { display: block; width: 100%; min-width: 520px; height: auto; }
 
 /* ── Info-Karten ── */
 .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1.6rem; }
 .info-card {
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #F8F2EA 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 8px rgba(110,80,50,0.07);
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -253,6 +261,8 @@ svg.range { display: block; width: 100%; min-width: 520px; height: auto; }
 
 /* ── Schreibweise ── */
 .hb-section {
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #F8F2EA 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 8px rgba(110,80,50,0.07);
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -280,7 +290,7 @@ footer { text-align: center; padding: 1.5rem; font-size: 0.7rem; color: var(--si
   .pick-row, .swap-wrap { grid-template-columns: 1fr; }
   .swap-btn { grid-column: 1; }
   .hb-row { flex-direction: column; }
-  header { padding: 2rem 1.25rem 2rem; }
+  header { padding: 1.2rem 1.25rem 1.1rem; }
   .topnav { padding: 0 1.25rem; }
   .topnav-links { display:none; }
 }
@@ -313,7 +323,7 @@ footer { text-align: center; padding: 1.5rem; font-size: 0.7rem; color: var(--si
   <div class="header-inner">
     <p class="header-eyebrow">Musikwerkzeug · Flöten</p>
     <h1>Gleicher Ton, <em>andere Flöte</em></h1>
-    <p>Querflöte, Blockflöte und Panflöte liegen verschieden hoch. Hier siehst du, welche Note du auf der anderen Flöte spielst, damit es genau gleich klingt.</p>
+    <p>Querflöte – Blockflöte – Panflöte</p>
   </div>
 </header>
 
@@ -345,7 +355,6 @@ footer { text-align: center; padding: 1.5rem; font-size: 0.7rem; color: var(--si
       <span class="card-label">Deine Noten</span>
       <button class="clear-link" id="clearBtn" disabled>Alle löschen</button>
     </div>
-    <p class="section-hint" id="notesHint"></p>
     <div class="note-grid" id="noteGrid"></div>
     <p class="fing-legend" id="fingLegend"></p>
   </div>
@@ -354,7 +363,7 @@ footer { text-align: center; padding: 1.5rem; font-size: 0.7rem; color: var(--si
   <section class="range-section">
     <span class="card-label">Tonumfang</span>
     <h2 class="range-title">Wo die Flöten klingen</h2>
-    <p class="range-sub">Klingende Tonhöhe von C4 (c') bis G7. Die Striche sind deine eingegebenen Noten: Liegen sie im Balken der Ziel-Flöte, kannst du sie dort im gleichen Ton spielen.</p>
+    <p class="range-sub">Klingende Tonhöhe von C4 (c') bis G7. Die Striche sind deine eingegebenen Noten.</p>
     <div class="range-scroll">
       <svg class="range" id="rangeSvg" viewBox="0 0 640 210" role="img" aria-label="Tonumfang der Flöten"></svg>
     </div>
@@ -366,25 +375,25 @@ footer { text-align: center; padding: 1.5rem; font-size: 0.7rem; color: var(--si
       <div class="info-card-title">Querflöte</div>
       <div class="flute-pic" data-f="flute"></div>
       <div class="info-card-range">C4 – C7 · c' bis c''''</div>
-      <div class="info-card-body">Klingt <strong>genau wie notiert</strong>. Sie reicht am tiefsten hinunter und kann deshalb fast alles der anderen Flöten mitspielen.</div>
+      <div class="info-card-body"><strong>Klingt genau wie notiert</strong></div>
     </div>
     <div class="info-card">
       <div class="info-card-title">Sopranblockflöte</div>
       <div class="flute-pic" data-f="sopran"></div>
       <div class="info-card-range">klingt C5 – D7</div>
-      <div class="info-card-body">Kleiner als die Querflöte, darum fängt sie erst <strong>eine Oktave höher</strong> an. Ihr tiefes C (alle Löcher zu) klingt wie das C5 der Querflöte.</div>
+      <div class="info-card-body"><strong>Fängt eine Oktave höher an</strong></div>
     </div>
     <div class="info-card">
       <div class="info-card-title">Altblockflöte</div>
       <div class="flute-pic" data-f="alt"></div>
       <div class="info-card-range">klingt F4 – G6</div>
-      <div class="info-card-body">Klingt wie notiert, aber der tiefste Ton ist F. Deshalb sind die Griffe <strong>5 Halbtöne versetzt</strong>: der Sopran-C-Griff ergibt auf der Alt ein F.</div>
+      <div class="info-card-body"><strong>Griffe 5 Halbtöne versetzt</strong></div>
     </div>
     <div class="info-card">
       <div class="info-card-title">Panflöte</div>
       <div class="flute-pic" data-f="pan"></div>
       <div class="info-card-range">G-Dur: G4 – G7 · C-Dur: C5 – C7</div>
-      <div class="info-card-body">Klingt wie notiert, hat aber nur die Töne einer Dur-Tonleiter. Fehlende Töne spielst du auf der <strong>Röhre darüber und knickst ab</strong>. Röhren werden von der tiefsten aus gezählt.</div>
+      <div class="info-card-body"><strong>Fehlende Töne: Röhre darüber, abknicken</strong></div>
     </div>
   </div>
 
@@ -641,7 +650,6 @@ function updateLegend() {
   let t = '<span class="k c"></span>zu <span class="k"></span>offen';
   if (TO !== 'flute') t += ' <span class="k h"></span>halb';
   if (TO === 'flute') t += ' · Gis und Es sind die kleinen Klappen für die kleinen Finger, Fuß = Cis- und C-Klappe.';
-  else t += ' · Das gestrichelte Loch ist das Daumenloch hinten. Barocke Griffweise; bei deutscher Griffweise sind F und Fis anders.';
   L.innerHTML = t;
 }
 
@@ -666,7 +674,7 @@ function refreshPickers() {
   const F = INSTR[FROM], T = INSTR[TO];
   let hint = 'Tippe die Noten so ein, wie sie im Heft für die <b>' + F.name + '</b> stehen. Darunter steht, welchen Griff du auf der <b>' + T.name + '</b> nimmst, damit es gleich hoch klingt.';
   if (FROM === TO) hint = 'Von und nach sind gleich. Wähle oben eine andere Ziel-Flöte.';
-  document.getElementById('notesHint').innerHTML = hint;
+  const nh = document.getElementById('notesHint'); if (nh) nh.innerHTML = hint;
 }
 buildSeg('fromSeg', 'from');
 buildSeg('toSeg', 'to');
@@ -752,8 +760,8 @@ function renderRange(marks) {
   // Oktav-Raster
   for (let m = 60; m <= 96; m += 12) {
     const x = xOf(m);
-    rsvg.appendChild(el('line', { x1: x, y1: top - 6, x2: x, y2: top + ORDER.length * rowH, stroke: 'rgba(237,240,244,0.1)', 'stroke-width': 1 }));
-    rsvg.appendChild(el('text', { x: x, y: top + ORDER.length * rowH + 16, fill: 'rgba(237,240,244,0.45)',
+    rsvg.appendChild(el('line', { x1: x, y1: top - 6, x2: x, y2: top + ORDER.length * rowH, stroke: 'rgba(110,80,50,0.15)', 'stroke-width': 1 }));
+    rsvg.appendChild(el('text', { x: x, y: top + ORDER.length * rowH + 16, fill: '#8B7A69',
       'font-family': "'DM Sans', sans-serif", 'font-size': 11, 'text-anchor': 'middle' }, 'C' + octOf(m)));
   }
 
@@ -762,22 +770,22 @@ function renderRange(marks) {
   const oLo = Math.max(F.lo, T.lo), oHi = Math.min(F.hi, T.hi);
   if (oLo <= oHi && FROM !== TO) {
     rsvg.appendChild(el('rect', { x: xOf(oLo), y: top - 6, width: xOf(oHi) - xOf(oLo), height: ORDER.length * rowH + 2,
-      fill: 'rgba(160,180,200,0.08)', rx: 4 }));
+      fill: 'rgba(255,255,255,0.45)', rx: 4 }));
   }
 
   ORDER.forEach((key, i) => {
     const I = INSTR[key];
     const y = top + i * rowH + rowH / 2;
     const isFrom = key === FROM, isTo = key === TO;
-    const color = isTo ? '#A08878' : isFrom ? '#6A8FA8' : 'rgba(237,240,244,0.16)';
+    const color = isTo ? '#7A5838' : isFrom ? '#B8946F' : 'rgba(139,122,105,0.25)';
     const label = key === 'pan' ? PAN[PAN_KEY].label : I.name;
-    rsvg.appendChild(el('text', { x: 0, y: y, fill: (isFrom || isTo) ? '#EDF0F4' : 'rgba(237,240,244,0.45)',
+    rsvg.appendChild(el('text', { x: 0, y: y, fill: (isFrom || isTo) ? '#3B2E24' : '#9A8875',
       'font-family': "'DM Sans', sans-serif", 'font-size': 11.5, 'font-weight': (isFrom || isTo) ? 600 : 400,
       'dominant-baseline': 'central' }, label.replace('blockflöte', '-BF').replace('Panflöte ', 'Pan ')));
     rsvg.appendChild(el('rect', { x: xOf(I.lo), y: y - 7, width: xOf(I.hi) - xOf(I.lo), height: 14, rx: 7, fill: color }));
-    rsvg.appendChild(el('text', { x: xOf(I.lo) + 7, y: y, fill: (isFrom || isTo) ? '#fff' : 'rgba(237,240,244,0.55)',
+    rsvg.appendChild(el('text', { x: xOf(I.lo) + 7, y: y, fill: (isFrom || isTo) ? '#fff' : '#6F5E4E',
       'font-family': "'DM Sans', sans-serif", 'font-size': 9.5, 'dominant-baseline': 'central' }, nameOf(I.lo)));
-    rsvg.appendChild(el('text', { x: xOf(I.hi) - 7, y: y, fill: (isFrom || isTo) ? '#fff' : 'rgba(237,240,244,0.55)',
+    rsvg.appendChild(el('text', { x: xOf(I.hi) - 7, y: y, fill: (isFrom || isTo) ? '#fff' : '#6F5E4E',
       'font-family': "'DM Sans', sans-serif", 'font-size': 9.5, 'text-anchor': 'end', 'dominant-baseline': 'central' }, nameOf(I.hi)));
   });
 
@@ -786,9 +794,9 @@ function renderRange(marks) {
     if (m < R_LO - 6 || m > R_HI + 6) return;
     const x = xOf(Math.min(Math.max(m, R_LO), R_HI));
     const inTo = m >= T.lo && m <= T.hi;
-    rsvg.appendChild(el('line', { x1: x, y1: top - 8, x2: x, y2: top + ORDER.length * rowH, stroke: inTo ? '#EDF0F4' : '#E39A80',
+    rsvg.appendChild(el('line', { x1: x, y1: top - 8, x2: x, y2: top + ORDER.length * rowH, stroke: inTo ? '#3B2E24' : '#B04A3A',
       'stroke-width': 1.6, 'stroke-dasharray': inTo ? '' : '3 3' }));
-    rsvg.appendChild(el('circle', { cx: x, cy: top - 8, r: 3.5, fill: inTo ? '#EDF0F4' : '#E39A80' }));
+    rsvg.appendChild(el('circle', { cx: x, cy: top - 8, r: 3.5, fill: inTo ? '#3B2E24' : '#B04A3A' }));
   });
 }
 
