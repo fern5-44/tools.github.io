@@ -191,23 +191,37 @@
       border-radius: 8px;
       padding: 9px 12px;
       margin: 10px 0 14px;
-      min-height: 4.6em;
+      min-height: 2.9em;
     }
     .legend {
       list-style: none;
       margin: 0 0 18px;
       padding: 0;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
       font-size: 12.5px;
-      line-height: 1.45;
-      color: #666;
+      color: #1a1a18;
     }
-    .legend li { display: flex; gap: 9px; align-items: flex-start; }
-    .legend b { color: #1a1a18; font-weight: 500; }
-    .legend .cnt { color: #999; }
-    .legend .sw { flex: none; width: 16px; height: 16px; border-radius: 4px; margin-top: 1px; }
+    .legend li { display: flex; gap: 6px; align-items: center; }
+    .legend .cnt { color: #999; font-family: 'DM Mono', monospace; font-size: 11px; }
+    .legend .sw { flex: none; width: 12px; height: 12px; border-radius: 3px; }
+
+    /* Fehlerkorrektur ablesen */
+    .ec-key { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; margin-bottom: 14px; }
+    .ec-now { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 500; cursor: pointer; }
+    .ec-now small { font-size: 13px; color: #888; font-weight: 400; }
+    .mods { display: inline-flex; gap: 2px; }
+    .mod { width: 14px; height: 14px; border: 1px solid #1a1a18; border-radius: 2px; background: #fff; }
+    .mod.d { background: #1a1a18; }
+    .ec-now .mod { width: 26px; height: 26px; border-radius: 4px; }
+    table.ec-table { border-collapse: collapse; font-size: 13px; }
+    table.ec-table td { padding: 3px 8px; }
+    table.ec-table tr { cursor: pointer; color: #999; }
+    table.ec-table tr.on { color: #1a1a18; font-weight: 500; background: #fde2c8; }
+    table.ec-table tr.on td:first-child { border-radius: 6px 0 0 6px; }
+    table.ec-table tr.on td:last-child { border-radius: 0 6px 6px 0; }
+    table.ec-table .mono { font-family: 'DM Mono', monospace; font-size: 12px; }
     .sub { font-size: 14px; font-weight: 500; margin: 6px 0 8px; }
     .tablewrap { overflow-x: auto; }
     table.bits { border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 12px; margin-bottom: 10px; }
@@ -218,7 +232,6 @@
     .b-mask { background: #d6e6fa; }
     .fmt-line { font-size: 13px; line-height: 1.5; color: #444; margin: 0 0 6px; padding: 3px 6px; border-radius: 6px; cursor: pointer; }
     .fmt-line:hover { background: #f5f9fd; }
-    .fmt-tip { font-size: 12px; color: #888; margin: 0 0 8px; }
     table.bits td[data-g] { cursor: pointer; }
     table.bits td[data-g]:hover { outline: 1.5px solid #185fa5; outline-offset: -1.5px; border-radius: 3px; }
     .chip {
@@ -278,7 +291,6 @@
       .topnav { padding: 0 1.25rem; }
       .topnav-links { display:none; }
       .actions { flex-wrap: wrap; }
-      .legend { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -439,7 +451,7 @@
     <div class="card-num">Vorschau</div>
     <div class="stage">
       <canvas id="canvas" hidden></canvas>
-      <p id="placeholder">Sobald du etwas eingibst, erscheint der Code hier.</p>
+      <p id="placeholder">Inhalt eingeben</p>
     </div>
     <p class="meta" id="meta"></p>
     <div class="actions">
@@ -450,8 +462,10 @@
   </div>
 
   <div class="card" id="anatomy" hidden>
-    <div class="card-num">Aufbau des Codes</div>
+    <div class="card-num">Aufbau</div>
     <p class="anat-summary" id="anat-summary"></p>
+    <h2 class="sub">Fehlerkorrektur ablesen</h2>
+    <div id="eckey"></div>
     <div class="stage map-stage"><canvas id="map" aria-label="Farbige Karte der Bereiche im QR-Code"></canvas></div>
     <p class="probe" id="probe" aria-live="polite"></p>
     <ul class="legend" id="legend"></ul>
@@ -460,17 +474,17 @@
     <div id="fmt"></div>
 
     <details id="bytes-details">
-      <summary>Alle <span id="bytes-count"></span> Bytes einzeln anzeigen</summary>
+      <summary>Alle <span id="bytes-count"></span> Bytes</summary>
       <div class="tablewrap">
         <table class="bytes" id="bytes">
-          <thead><tr><th>Nr.</th><th class="col-stream">im Code</th><th>Bits</th><th>Bedeutung</th></tr></thead>
+          <thead><tr><th>Nr.</th><th class="col-stream">im Code</th><th>Bits</th><th>Inhalt</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
     </details>
   </div>
 
-  <p class="hint">Vor dem Drucken einmal mit der Handykamera testen. Faustregel: Leseabstand ÷ 10 = Kantenlänge.</p>
+  <p class="hint">Vor dem Druck testen · Leseabstand ÷ 10 = Kantenlänge</p>
 </div>
 
 <script src="qrcode.js"></script>
@@ -519,9 +533,9 @@
 
     function charName(ch) {
       if (ch === ' ') return 'Leerzeichen';
-      if (ch === '\n') return 'Zeilenumbruch';
-      if (ch === '\r') return 'Wagenrücklauf';
-      if (ch === '\t') return 'Tabulator';
+      if (ch === '\n') return 'Umbruch';
+      if (ch === '\r') return 'Umbruch';
+      if (ch === '\t') return 'Tab';
       return '„' + ch + '“';
     }
 
@@ -637,10 +651,10 @@
       const modeBits = modeSeg.val.toString(2).padStart(4, '0');
       const payload = [];
       if (modeSeg.val === 4) {
-        modeSeg.label = 'Modus 0100 = Byte (normaler Text)';
+        modeSeg.label = 'Modus Byte';
         const lenSeg = take(v < 10 ? 8 : 16, 'len', '');
         const L = Math.min(lenSeg.val, Math.floor((totalBits - p) / 8));
-        lenSeg.label = 'Länge = ' + lenSeg.val + ' Bytes';
+        lenSeg.label = 'Länge ' + lenSeg.val;
         const charSegs = [];
         for (let i = 0; i < L; i++) { const s = take(8, 'char', ''); payload.push(s.val); charSegs.push(s); }
         // Zeichen zuordnen (UTF-8: ein Zeichen kann mehrere Bytes haben)
@@ -654,22 +668,22 @@
           catch (e) { ch = '?'; }
           for (let q = 0; q < size && i + q < payload.length; q++) {
             charSegs[i + q].label = size > 1
-              ? charName(ch) + ' (UTF-8, Byte ' + (q + 1) + ' von ' + size + ')'
-              : charName(ch) + ' = ' + payload[i + q];
+              ? charName(ch) + ' UTF-8 ' + (q + 1) + '/' + size
+              : charName(ch) + ' ' + payload[i + q];
           }
           i += size;
         }
-        take(4, 'term', 'Ende-Markierung');
-        if (p % 8) take(8 - (p % 8), 'zero', 'Nullen bis zur Byte-Grenze');
+        take(4, 'term', 'Ende');
+        if (p % 8) take(8 - (p % 8), 'zero', 'Nullen');
         let alt = 0;
         while (p < totalBits) {
           const s = take(8, 'pad', '');
-          s.label = 'Füllbyte ' + s.val + (s.val === (alt ? 17 : 236) ? '' : ' (unerwartet)');
+          s.label = 'Füller ' + s.val + (s.val === (alt ? 17 : 236) ? '' : ' ?');
           alt ^= 1;
         }
       } else {
         modeSeg.label = 'Modus ' + modeBits;
-        take(totalBits - p, 'other', 'Daten in einem anderen Modus');
+        take(totalBits - p, 'other', 'anderer Modus');
       }
       let text = '';
       try { text = new TextDecoder('utf-8').decode(new Uint8Array(payload)); } catch (e) {}
@@ -683,7 +697,7 @@
           const lo = Math.max(a, s0), hi = Math.min(b, s1);
           const first = Math.floor(s0 / 8), last = Math.floor((s1 - 1) / 8);
           let label = s.label;
-          if (last > first) label += ' (Teil ' + (d - first + 1) + '/' + (last - first + 1) + ')';
+          if (last > first) label += ' (' + (d - first + 1) + '/' + (last - first + 1) + ')';
           out.push({ type: s.type, bits: bits.slice(lo, hi).join(''), label });
         }
         return out;
@@ -715,19 +729,20 @@
     const tbody = document.querySelector('#bytes tbody');
     const bytesCount = document.getElementById('bytes-count');
     const colStream = document.querySelectorAll('.col-stream');
-    const PROBE_HINT = 'Fahre über ein Feld oder tippe darauf, um zu sehen, wozu es gehört.';
+    const PROBE_HINT = 'Feld antippen';
+    const ecKey = document.getElementById('eckey');
 
     const COLORS = {
-      finder:  ['#ef8f7a', 'Eckquadrate', 'Daran findet der Scanner den Code und erkennt, wie herum er liegt.'],
-      sep:     ['#fbe0d8', 'Trennrand', 'Weisser Rand, der die Eckquadrate vom Rest trennt.'],
-      timing:  ['#f2c14e', 'Timing-Linien', 'Abwechselnd schwarz und weiss. Daran zählt der Scanner Zeilen und Spalten ab.'],
-      align:   ['#f59e5b', 'Ausrichtungsquadrate', 'Helfen dem Scanner, wenn der Code verzerrt oder gewölbt ist.'],
-      format:  ['#5b8def', 'Format-Information', 'Fehlerkorrektur-Stufe und Maske, zweimal gespeichert.'],
-      version: ['#a7c2f7', 'Versions-Information', 'Die Versionsnummer, ab Version 7 zweimal gespeichert.'],
-      darkmod: ['#9b59b6', 'Dark Module', 'Ist bei jedem QR-Code schwarz und hat keine weitere Bedeutung.'],
-      data:    ['#3fa66a', 'Datenbytes', 'Dein Inhalt: Modus, Länge, Zeichen, Ende-Markierung und Füllbytes.'],
-      ec:      ['#8e8e8a', 'Fehlerkorrektur-Bytes', 'Reed-Solomon-Bytes, mit denen beschädigte Stellen repariert werden.'],
-      rem:     ['#e4e4e0', 'Restbits', 'Übriger Platz, der nicht für ganze Bytes reicht. Wird ignoriert.']
+      finder:  ['#ef8f7a', 'Eckquadrat', 'Position, Ausrichtung'],
+      sep:     ['#fbe0d8', 'Trennrand', 'immer weiss'],
+      timing:  ['#f2c14e', 'Timing', 'abwechselnd, zum Abzählen'],
+      align:   ['#f59e5b', 'Ausrichtung', 'gegen Verzerrung'],
+      format:  ['#5b8def', 'Format', 'Stufe + Maske'],
+      version: ['#a7c2f7', 'Version', 'ab Version 7'],
+      darkmod: ['#9b59b6', 'Dark Module', 'immer schwarz'],
+      data:    ['#3fa66a', 'Daten', ''],
+      ec:      ['#8e8e8a', 'Korrektur', ''],
+      rem:     ['#e4e4e0', 'Restbits', 'ungenutzt']
     };
     const ALT = { data: '#a9dbb8', ec: '#cfcfcb' };
 
@@ -794,14 +809,8 @@
 
     function byteTitle(k) {
       const s = A.stream[k];
-      if (s.type === 'data') {
-        let t = 'Byte ' + (k + 1) + ' (Daten';
-        if (A.blocks.length > 1) t += ', Nr. ' + (s.logical + 1) + ' der Nachricht, Block ' + (s.block + 1);
-        return t + ')';
-      }
-      let t = 'Byte ' + (k + 1) + ' (Fehlerkorrektur';
-      if (A.blocks.length > 1) t += ', Block ' + (s.block + 1);
-      return t + ')';
+      const blk = A.blocks.length > 1 ? ', Block ' + (s.block + 1) : '';
+      return 'Byte ' + (k + 1) + ' · ' + (s.type === 'data' ? 'Daten' : 'Korrektur') + blk;
     }
 
     // Markierungen: ein Byte oder eine Gruppe der Format-Information
@@ -819,42 +828,36 @@
       const res = FMT_GROUPS[g].map((i) => A.fmt[i]);
       const msk = FMT_GROUPS[g].map((i) => A.fmtMask[i]);
       if (g === 'ec') {
-        return 'Fehlerkorrektur-Stufe (Format-Bits 1 und 2): Im Bild ' + colour(raw[0]) + ', ' + colour(raw[1]) +
-          ' (' + raw.join('') + '). Nach dem XOR mit ' + msk.join('') + ' wird daraus ' + res.join('') +
-          ', also Stufe ' + A.ec + ': etwa ' + A.ecPercent + ' der Bytes dürfen beschädigt sein. ' +
-          'So erkennt man es im Bild: schwarz/schwarz = L (7 %), schwarz/weiss = M (15 %), weiss/schwarz = Q (25 %), weiss/weiss = H (30 %).';
+        return 'Fehlerkorrektur · ' + raw.map(colour).join('/') + ' · ' + raw.join('') + ' ⊕ ' + msk.join('') +
+          ' = ' + res.join('') + ' → ' + A.ec + ' (' + A.ecPercent + ')';
       }
       if (g === 'mask') {
-        return 'Maske (Format-Bits 3 bis 5): Im Bild ' + raw.map(colour).join(', ') + ' (' + raw.join('') +
-          '). Nach dem XOR mit ' + msk.join('') + ' wird daraus ' + res.join('') + ', also Maske ' + A.mask +
-          ': Ein Feld wird umgedreht, wenn ' + A.maskText + '.';
+        return 'Maske · ' + raw.join('') + ' ⊕ ' + msk.join('') + ' = ' + res.join('') + ' → Maske ' + A.mask +
+          ' · umdrehen wenn ' + A.maskText;
       }
-      return 'Prüfbits (Format-Bits 6 bis 15): Damit erkennt und korrigiert der Scanner Lesefehler in der Format-Information. ' +
-        'Sie enthalten keine zusätzliche Information.';
+      return 'Prüfbits · schützen die Format-Info';
     }
 
     function describe(r, c) {
-      const where = 'Zeile ' + r + ', Spalte ' + c + ': ';
+      const where = 'Z' + r + ' S' + c + ' · ';
       const k = A.kind[r][c];
       const info = A.cell[r][c];
       if (k === 'data' || k === 'ec') {
         const s = A.stream[info.k];
-        let t = where + byteTitle(info.k) + ', Bit ' + (info.bit + 1) + ' von 8. ';
-        t += 'Im Bild ' + (info.raw ? 'schwarz' : 'weiss') + ', Maske ' + A.mask +
-             (info.m ? ' dreht hier um' : ' dreht hier nicht um') + ', also Bit ' + info.val + '.';
+        let t = where + byteTitle(info.k) + ' · Bit ' + (info.bit + 1) + '/8 · ' +
+          colour(info.raw) + (info.m ? ' → umgedreht' : '') + ' → ' + info.val;
         if (s.type === 'data') {
           const seg = A.segAtBit(s.logical * 8 + info.bit);
-          if (seg) t += ' Gehört zu: ' + seg.label + '.';
+          if (seg) t += ' · ' + seg.label;
         }
         return { text: t, hl: byteHL(info.k) };
       }
       if (k === 'format') {
         const [copy, i] = A.fmtCopy[r + ',' + c];
         const g = groupOf(i);
-        return { text: where + 'Format-Information, Kopie ' + copy + ', Bit ' + (i + 1) + ' von 15. ' + fmtGroupText(g) +
-          ' Die passenden Felder beider Kopien sind blau umrandet.', hl: fmtHL(g) };
+        return { text: where + 'Kopie ' + copy + ' · Bit ' + (i + 1) + '/15 · ' + fmtGroupText(g), hl: fmtHL(g) };
       }
-      return { text: where + COLORS[k][1] + '. ' + COLORS[k][2], hl: null };
+      return { text: where + COLORS[k][1] + (COLORS[k][2] ? ' · ' + COLORS[k][2] : ''), hl: null };
     }
 
     function cellFromEvent(e) {
@@ -886,21 +889,30 @@
         '<td data-g="' + groupOf(i) + '" class="' + (cls ? (i < 2 ? 'b-ec' : i < 5 ? 'b-mask' : '') : '') + '">' + b + '</td>').join('') + '</tr>';
     }
 
+    const mods = (a, b) => '<span class="mods"><span class="mod' + (a ? ' d' : '') + '"></span><span class="mod' + (b ? ' d' : '') + '"></span></span>';
+
+    function renderEcKey() {
+      const rows = [[1, 1, 'L', '7 %'], [1, 0, 'M', '15 %'], [0, 1, 'Q', '25 %'], [0, 0, 'H', '30 %']];
+      ecKey.innerHTML =
+        '<div class="ec-key" data-g="ec">' +
+        '<div class="ec-now">' + mods(A.fmtRead[0], A.fmtRead[1]) + ' → ' + A.ec + ' <small>' + A.ecPercent + '</small></div>' +
+        '<table class="ec-table">' + rows.map(([a, b, l, pc]) =>
+          '<tr class="' + (l === A.ec ? 'on' : '') + '"><td>' + mods(a, b) + '</td><td class="mono">' + a + b + '</td><td>' +
+          l + '</td><td>' + pc + '</td></tr>').join('') + '</table>' +
+        '</div>';
+    }
+
     function renderFormat() {
       fmtBox.innerHTML =
-        '<p class="fmt-tip">Zeige auf ein Bit oder eine Zeile, um die Felder im Bild zu sehen.</p>' +
         '<div class="tablewrap"><table class="bits">' +
-        bitRow('gelesen', A.fmtRead) +
-        bitRow('XOR feste Maske', A.fmtMask) +
-        bitRow('Ergebnis', A.fmt, true) +
+        bitRow('Bild', A.fmtRead) +
+        bitRow('⊕', A.fmtMask) +
+        bitRow('=', A.fmt, true) +
         '</table></div>' +
-        '<p class="fmt-line" data-g="ec"><span class="chip b-ec">' + A.fmt[0] + A.fmt[1] + '</span> Fehlerkorrektur-Stufe ' + A.ec +
-        ', etwa ' + A.ecPercent + ' der Bytes dürfen beschädigt sein. Im Bild sieht man das direkt in Zeile 8 an den ' +
-        'ersten beiden Feldern links: ' + colour(A.fmtRead[0]) + ', ' + colour(A.fmtRead[1]) +
-        ' (' + A.fmtRead[0] + A.fmtRead[1] + '). Nach dem XOR mit 10 wird daraus ' + A.fmt[0] + A.fmt[1] + '.</p>' +
+        '<p class="fmt-line" data-g="ec"><span class="chip b-ec">' + A.fmt[0] + A.fmt[1] + '</span> Stufe ' + A.ec + ' · ' + A.ecPercent + '</p>' +
         '<p class="fmt-line" data-g="mask"><span class="chip b-mask">' + A.fmt[2] + A.fmt[3] + A.fmt[4] + '</span> Maske ' + A.mask +
-        ': Ein Feld wird umgedreht, wenn ' + A.maskText + ' (Z = Zeile, S = Spalte).</p>' +
-        '<p class="fmt-line" data-g="bch"><span class="chip">' + A.fmt.slice(5).join('') + '</span> Prüfbits, damit der Scanner Lesefehler in der Format-Information erkennt.</p>';
+        ' · ' + A.maskText + '</p>' +
+        '<p class="fmt-line" data-g="bch"><span class="chip">' + A.fmt.slice(5).join('') + '</span> Prüfbits</p>';
     }
 
     function renderLegend() {
@@ -910,11 +922,11 @@
       }
       const order = ['finder', 'sep', 'timing', 'align', 'format', 'version', 'darkmod', 'data', 'ec', 'rem'];
       legend.innerHTML = order.filter((k) => counts[k]).map((k) => {
-        let extra = counts[k] + (counts[k] === 1 ? ' Feld' : ' Felder');
-        if (k === 'data') extra = A.dataTotal + ' Bytes';
-        if (k === 'ec') extra = (A.total - A.dataTotal) + ' Bytes';
-        return '<li><span class="sw" style="background:' + COLORS[k][0] + '"></span>' +
-          '<span><b>' + COLORS[k][1] + '</b> <span class="cnt">' + extra + '</span><br>' + COLORS[k][2] + '</span></li>';
+        let extra = '';
+        if (k === 'data') extra = A.dataTotal + ' B';
+        if (k === 'ec') extra = (A.total - A.dataTotal) + ' B';
+        return '<li><span class="sw" style="background:' + COLORS[k][0] + '"></span>' + COLORS[k][1] +
+          (extra ? ' <span class="cnt">' + extra + '</span>' : '') + '</li>';
       }).join('');
     }
 
@@ -942,7 +954,7 @@
         rows.push('<tr class="ec-row" data-k="' + k + '"><td>' + (k + 1) + '</td>' +
           (multi ? '<td>' + (k + 1) + '</td>' : '') +
           '<td class="mono">' + A.values[k].toString(2).padStart(8, '0') + '</td>' +
-          '<td>Fehlerkorrektur' + (multi ? ', Block ' + (s.block + 1) : '') + '</td></tr>');
+          '<td>Korrektur' + (multi ? ' · Block ' + (s.block + 1) : '') + '</td></tr>');
       });
       tbody.innerHTML = rows.join('');
       tableDirty = false;
@@ -951,14 +963,14 @@
     tbody.addEventListener('pointerover', (e) => {
       const tr = e.target.closest('tr'); if (!tr || !A || locked) return;
       const k = +tr.dataset.k;
-      probe.textContent = byteTitle(k) + ' ist im Bild blau umrandet.';
+      probe.textContent = byteTitle(k);
       setHover(byteHL(k));
     });
     tbody.addEventListener('click', (e) => {
       const tr = e.target.closest('tr'); if (!tr || !A) return;
       const hl = byteHL(+tr.dataset.k);
       locked = locked && locked.key === hl.key ? null : hl;
-      probe.textContent = locked ? byteTitle(+tr.dataset.k) + ' ist im Bild blau umrandet. Tippe nochmals, um es zu lösen.' : PROBE_HINT;
+      probe.textContent = locked ? byteTitle(+tr.dataset.k) + ' · fixiert' : PROBE_HINT;
       draw();
     });
     tbody.addEventListener('pointerleave', () => {
@@ -966,22 +978,24 @@
       probe.textContent = PROBE_HINT; setHover(null);
     });
 
-    // Format-Information: Bits und Zeilen zeigen ihre Felder im Bild
-    fmtBox.addEventListener('pointerover', (e) => {
-      const el = e.target.closest('[data-g]'); if (!el || !A || locked) return;
-      probe.textContent = fmtGroupText(el.dataset.g) + ' Die passenden Felder beider Kopien sind blau umrandet.';
-      setHover(fmtHL(el.dataset.g));
-    });
-    fmtBox.addEventListener('click', (e) => {
-      const el = e.target.closest('[data-g]'); if (!el || !A) return;
-      const hl = fmtHL(el.dataset.g);
-      locked = locked && locked.key === hl.key ? null : hl;
-      probe.textContent = locked ? fmtGroupText(el.dataset.g) + ' Die passenden Felder beider Kopien sind blau umrandet.' : PROBE_HINT;
-      draw();
-    });
-    fmtBox.addEventListener('pointerleave', () => {
-      if (!A || locked) return;
-      probe.textContent = PROBE_HINT; setHover(null);
+    // Format-Information und Fehlerkorrektur-Tabelle: Felder im Bild markieren
+    [fmtBox, ecKey].forEach((box) => {
+      box.addEventListener('pointerover', (e) => {
+        const el = e.target.closest('[data-g]'); if (!el || !A || locked) return;
+        probe.textContent = fmtGroupText(el.dataset.g);
+        setHover(fmtHL(el.dataset.g));
+      });
+      box.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-g]'); if (!el || !A) return;
+        const hl = fmtHL(el.dataset.g);
+        locked = locked && locked.key === hl.key ? null : hl;
+        probe.textContent = locked ? fmtGroupText(el.dataset.g) + ' · fixiert' : PROBE_HINT;
+        draw();
+      });
+      box.addEventListener('pointerleave', () => {
+        if (!A || locked) return;
+        probe.textContent = PROBE_HINT; setHover(null);
+      });
     });
     details.addEventListener('toggle', () => { if (details.open && tableDirty && A) renderTable(); });
 
@@ -1000,11 +1014,12 @@
       card.hidden = false;
       fitSize();
       probe.textContent = PROBE_HINT;
-      summary.innerHTML = 'Version ' + A.v + ' mit ' + A.n + ' × ' + A.n + ' Feldern. ' +
-        A.total + ' Bytes haben Platz: ' + A.dataTotal + ' für Daten, ' + (A.total - A.dataTotal) + ' für die Fehlerkorrektur' +
-        (A.blocks.length > 1 ? ', aufgeteilt auf ' + A.blocks.length + ' Blöcke. Die Bytes der Blöcke sind abwechselnd verzahnt.' : '.') +
-        '<br>Aus dem Code zurückgelesen: <span class="readback">' + esc(A.text.length > 120 ? A.text.slice(0, 120) + ' …' : A.text) + '</span>';
+      summary.innerHTML = 'Version ' + A.v + ' · ' + A.n + '×' + A.n + ' · ' + A.dataTotal + ' Daten + ' +
+        (A.total - A.dataTotal) + ' Korrektur-Bytes' +
+        (A.blocks.length > 1 ? ' · ' + A.blocks.length + ' Blöcke, verzahnt' : '') +
+        '<br>gelesen: <span class="readback">' + esc(A.text.length > 120 ? A.text.slice(0, 120) + ' …' : A.text) + '</span>';
       draw();
+      renderEcKey();
       renderFormat();
       renderLegend();
       bytesCount.textContent = A.total;
@@ -1135,7 +1150,7 @@
     $('#o-size-out').textContent = size + ' px';
     $('#o-margin-out').textContent = margin;
 
-    if (!data) return idle('Sobald du etwas eingibst, erscheint der Code hier.');
+    if (!data) return idle('Inhalt eingeben');
 
     let qr;
     try {
@@ -1143,7 +1158,7 @@
       qr.addData(data, 'Byte');
       qr.make();
     } catch (err) {
-      return idle('Der Inhalt ist zu lang für einen QR-Code. Text kürzen oder niedrigere Fehlerkorrektur wählen.');
+      return idle('Zu lang · kürzen oder tiefere Fehlerkorrektur');
     }
 
     const count = qr.getModuleCount();
