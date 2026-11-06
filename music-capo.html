@@ -112,7 +112,24 @@
 
   /* ── Chord Grid ── */
   .chords-section { margin-bottom: 1rem; }
-  .chords-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .chords-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+
+  /* ── Umschalter Gitarre / Ukulele ── */
+  .mode-switch { display: flex; gap: 18px; }
+  .mode-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem; font-weight: 500;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--text-muted);
+    background: none; border: none;
+    padding: 4px 0 5px;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .mode-btn:hover { color: var(--mahagoni); }
+  .mode-btn.active { color: var(--mahagoni); border-bottom-color: var(--gold); }
+  .mode-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 2px; }
 
   .clear-btn {
     font-family: 'Inter', sans-serif;
@@ -124,6 +141,7 @@
     border-radius: 20px;
     padding: 5px 14px;
     cursor: pointer;
+    white-space: nowrap;
     transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
   }
   .clear-btn:hover:not(:disabled) { background: var(--gold); color: var(--creme); border-color: var(--gold); }
@@ -215,12 +233,21 @@
     border-radius: 0 0 10px 10px;
     padding: 8px 0 9px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 30px;
   }
   .chord-griff svg { display: block; }
   .chord-griff .no-griff { color: var(--creme-dark); font-size: 1rem; line-height: 1; }
+  .chord-griff .uke-hint {
+    margin-top: 4px;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.3;
+  }
+  .chord-griff .uke-hint b { color: var(--gold); font-weight: 600; }
 
   /* focus highlight syncs border on full column */
   .chord-slot:focus-within input { border-color: var(--gold); }
@@ -230,6 +257,7 @@
 
   /* ── Block headings (shared by lower sections) ── */
   .block { margin-top: 2.5rem; }
+  .block[hidden] { display: none; }
   .block-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 600; color: var(--mahagoni); }
   .block-sub { font-size: 0.82rem; color: var(--text-muted); margin-top: 3px; margin-bottom: 1rem; line-height: 1.5; }
 
@@ -296,6 +324,7 @@
   }
   .circle-legend .dot-in { color: var(--gold-light); font-weight: 600; }
   .circle-legend .dot-out { color: #E8A838; }
+  .circle-legend .ring-in { color: rgba(245,239,230,0.85); }
 
   footer { text-align: center; padding: 1.5rem; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--creme-dark); }
 
@@ -305,6 +334,7 @@
     .note-cap { display: none; }
     .topnav { padding: 0 1.25rem; }
     .topnav-links { display:none; }
+    .mode-switch { gap: 12px; }
   }
 </style>
 </head>
@@ -380,14 +410,17 @@
   <!-- 8 Akkord-Slots -->
   <div class="chords-section">
     <div class="chords-head">
-      <span class="field-label" style="margin-bottom:0;">Deine Akkorde</span>
+      <div class="mode-switch" role="tablist" aria-label="Instrument wählen">
+        <button type="button" class="mode-btn active" data-mode="guitar" role="tab" aria-selected="true">Deine Akkorde</button>
+        <button type="button" class="mode-btn" data-mode="uke" role="tab" aria-selected="false">Auf der Ukulele</button>
+      </div>
       <button type="button" id="clearAll" class="clear-btn" disabled>Alle löschen</button>
     </div>
     <div class="chord-grid-inputs" id="chordGrid"></div>
   </div>
 
-  <!-- ── NEU 1: Notenbezeichnung H / B ── -->
-  <section class="block">
+  <!-- ── Notenbezeichnung H / B (nur Gitarre) ── -->
+  <section class="block" id="notationBlock">
     <h2 class="block-title">Notenbezeichnung: H und B</h2>
     <p class="block-sub">Diese App rechnet mit der englischen Schreibweise. So übersetzt du die deutschen Namen:</p>
     <div class="notation-grid">
@@ -410,8 +443,8 @@
     </p>
   </section>
 
-  <!-- ── NEU 2: Akkord-Kreis ── -->
-  <section class="block">
+  <!-- ── Akkord-Kreis (nur Gitarre) ── -->
+  <section class="block" id="circleBlock">
     <div class="circle-section">
       <h2 class="block-title">Akkord-Kreis</h2>
       <p class="block-sub">So wird oben gerechnet: jeder Capo-Bund dreht den Akkord um einen Halbton nach unten. Ohne Capo bleibt alles, wie es ist.</p>
@@ -424,6 +457,20 @@
     </div>
   </section>
 
+  <!-- ── Halbton-Kreis (nur Ukulele) ── -->
+  <section class="block" id="ukeBlock" hidden>
+    <div class="circle-section">
+      <h2 class="block-title">Halbton-Abstand Gitarre → Ukulele</h2>
+      <p class="block-sub">Die Ukulele (G‑C‑E‑A) ist wie die vier hohen Gitarrensaiten, nur 5 Halbtöne höher. Greifst du deinen Gitarrenakkord auf der Ukulele, heißt er dort 5 Halbtöne weiter: aus D wird G.</p>
+      <div class="circle-wrap">
+        <svg class="chord-circle" id="ukeCircle" viewBox="0 0 340 340" role="img" aria-label="Halbton-Kreis von der Gitarren-Griffform zum Ukulele-Akkord"></svg>
+      </div>
+      <p class="circle-legend">
+        <span class="ring-in">○</span> Gitarren-Griffform &nbsp;→&nbsp; 5 Halbtöne im Uhrzeigersinn &nbsp;→&nbsp; <span class="dot-out">● Ukulele-Akkord</span>
+      </p>
+    </div>
+  </section>
+
 </main>
 
 <footer>Capo-Rechner · Alle Berechnungen lokal im Browser · Keine Daten werden gespeichert</footer>
@@ -431,6 +478,9 @@
 <script>
 function toggleNav(){var s=document.getElementById('sidenav'),o=document.getElementById('overlay'),b=document.getElementById('hamburger');var open=s.classList.contains('open');s.classList.toggle('open',!open);o.classList.toggle('show',!open);b.classList.toggle('open',!open);}
 function closeNav(){document.getElementById('sidenav').classList.remove('open');document.getElementById('overlay').classList.remove('show');document.getElementById('hamburger').classList.remove('open');}
+
+let MODE = 'guitar'; // 'guitar' | 'uke'
+const UKE_OFFSET = 5; // Ukulele = Gitarre + 5 Halbtöne (Quarte)
 
 const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const FLAT_MAP = {'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B'};
@@ -456,12 +506,14 @@ function transposeDown(root, semitones) {
   return NOTES[(NOTES.indexOf(root) - semitones + 12) % 12];
 }
 const SIMPLE_ROOTS = new Set(['C','D','E','G','A']);
+const SIMPLE_UKE_ROOTS = new Set(['C','D','F','G','A']);
 function isSimple(root, quality) {
-  return SIMPLE_ROOTS.has(root) && ['','m','7','m7','maj7'].includes(quality);
+  const set = MODE === 'uke' ? SIMPLE_UKE_ROOTS : SIMPLE_ROOTS;
+  return set.has(root) && ['','m','7','m7','maj7'].includes(quality);
 }
 function noteColor(i) { return 'hsl(' + (i * 30) + ', 62%, 52%)'; }
 
-/* ── Griffe ──
+/* ── Gitarren-Griffe ──
    Reihenfolge tiefe E-Saite → hohe e-Saite. 'x' = nicht spielen, 0 = leer, n = Bund.
    Schöne offene Standardgriffe haben Vorrang; alles andere wird als Barré (E- oder
    A-Form) an der passenden Bundposition berechnet, damit JEDER Akkord ein Griffbild hat. */
@@ -481,7 +533,7 @@ const ASHAPE = { '':['x',0,2,2,2,0], 'm':['x',0,2,2,1,0], '7':['x',0,2,0,2,0], '
 
 function shiftShape(t, n) { return t.map(v => v === 'x' ? 'x' : v + n); }
 
-function getShape(root, quality) {
+function getGuitarShape(root, quality) {
   if (!root) return null;
   const name = root + quality;
   if (OPEN[name]) return { frets: OPEN[name], barre: null };
@@ -499,11 +551,59 @@ function getShape(root, quality) {
   return { frets: c.shape, barre: { fret: c.fret, from: c.from, to: c.to } };
 }
 
+/* ── Ukulele-Griffe (Stimmung G‑C‑E‑A, Reihenfolge G → A) ── */
+const UKE_OPEN = {
+  'C':[0,0,0,3],  'Cm':[0,3,3,3],  'C7':[0,0,0,1],  'Cm7':[3,3,3,3],  'Cmaj7':[0,0,0,2],
+  'C#':[1,1,1,4], 'C#m':[1,1,0,4], 'C#7':[1,1,1,2],
+  'D':[2,2,2,0],  'Dm':[2,2,1,0],  'D7':[2,2,2,3],  'Dm7':[2,2,1,3],  'Dmaj7':[2,2,2,4],
+  'D#':[0,3,3,1], 'D#m':[3,3,2,1], 'D#7':[3,3,3,4],
+  'E':[4,4,4,2],  'Em':[0,4,3,2],  'E7':[1,2,0,2],  'Em7':[0,2,0,2],  'Emaj7':[1,3,0,2],
+  'F':[2,0,1,0],  'Fm':[1,0,1,3],  'F7':[2,3,1,3],  'Fm7':[1,3,1,3],  'Fmaj7':[2,4,1,3],
+  'F#':[3,1,2,1], 'F#m':[2,1,2,0], 'F#7':[3,4,2,4], 'F#m7':[2,4,2,4],
+  'G':[0,2,3,2],  'Gm':[0,2,3,1],  'G7':[0,2,1,2],  'Gm7':[0,2,1,1],  'Gmaj7':[0,2,2,2],
+  'G#':[5,3,4,3], 'G#m':[4,3,4,2], 'G#7':[1,3,2,3], 'G#m7':[1,3,2,2],
+  'A':[2,1,0,0],  'Am':[2,0,0,0],  'A7':[0,1,0,0],  'Am7':[0,0,0,0],  'Amaj7':[1,1,0,0],
+  'A#':[3,2,1,1], 'A#m':[3,1,1,1], 'A#7':[1,2,1,1], 'A#m7':[1,1,1,1], 'A#maj7':[2,2,1,1],
+  'B':[4,3,2,2],  'Bm':[4,2,2,2],  'B7':[2,3,2,2],  'Bm7':[2,2,2,2],  'Bmaj7':[3,3,2,2]
+};
+// bewegliche Formen: A-Form (Grundton auf A-Saite) und G-Form (Grundton auf G-Saite)
+const UKE_ASHAPE = { '':[2,1,0,0], 'm':[2,0,0,0], '7':[0,1,0,0], 'm7':[0,0,0,0], 'maj7':[1,1,0,0] };
+const UKE_GSHAPE = { '':[0,2,3,2], 'm':[0,2,3,1], '7':[0,2,1,2], 'm7':[0,2,1,1], 'maj7':[0,2,2,2] };
+
+function ukeBarre(frets) {
+  const nums = frets.filter(v => typeof v === 'number');
+  const min = Math.min.apply(null, nums);
+  if (min <= 0) return null;
+  const n = frets.length;
+  if (frets[n - 1] !== min || frets[n - 2] !== min) return null;
+  const from = frets.indexOf(min);
+  return { fret: min, from: from, to: n - 1 };
+}
+
+function getUkeShape(root, quality) {
+  if (!root) return null;
+  const name = root + quality;
+  if (UKE_OPEN[name]) return { frets: UKE_OPEN[name], barre: ukeBarre(UKE_OPEN[name]) };
+  if (!(quality in UKE_ASHAPE)) return null;
+  const R = NOTES.indexOf(root);
+  if (R < 0) return null;
+  const bA = ((R - 9) % 12 + 12) % 12;
+  const bG = ((R - 7) % 12 + 12) % 12;
+  const cands = [];
+  if (bA >= 1) cands.push({ frets: shiftShape(UKE_ASHAPE[quality], bA), fret: bA });
+  if (bG >= 1) cands.push({ frets: shiftShape(UKE_GSHAPE[quality], bG), fret: bG });
+  if (!cands.length) return null;
+  cands.sort((a, b) => a.fret - b.fret);
+  const f = cands[0].frets;
+  return { frets: f, barre: ukeBarre(f) };
+}
+
 function griffSVG(shape) {
   const frets = shape.frets, barre = shape.barre;
-  const W = 66, H = 82, left = 12, right = 9, fretH = 13, nFrets = 4;
+  const nStr = frets.length;
+  const W = nStr === 4 ? 52 : 66, H = 82, left = 12, right = 9, fretH = 13, nFrets = 4;
   const span = W - left - right;
-  const sx = i => left + (span / 5) * i;
+  const sx = i => left + (span / (nStr - 1)) * i;
   const nums = frets.filter(v => typeof v === 'number' && v > 0);
   let baseFret = 1, drawNut = true;
   if (nums.length) {
@@ -515,13 +615,13 @@ function griffSVG(shape) {
   let s = '';
   s += '<line x1="' + left + '" y1="' + topY + '" x2="' + (W - right) + '" y2="' + topY + '" stroke="#2C1A0E" stroke-width="' + (drawNut ? 3 : 1) + '"/>';
   for (let f = 1; f <= nFrets; f++) { const y = topY + f * fretH; s += '<line x1="' + left + '" y1="' + y + '" x2="' + (W - right) + '" y2="' + y + '" stroke="rgba(44,26,14,0.22)" stroke-width="1"/>'; }
-  for (let i = 0; i < 6; i++) { const x = sx(i); s += '<line x1="' + x + '" y1="' + topY + '" x2="' + x + '" y2="' + bottom + '" stroke="rgba(44,26,14,0.32)" stroke-width="1"/>'; }
+  for (let i = 0; i < nStr; i++) { const x = sx(i); s += '<line x1="' + x + '" y1="' + topY + '" x2="' + x + '" y2="' + bottom + '" stroke="rgba(44,26,14,0.32)" stroke-width="1"/>'; }
   if (!drawNut) { s += '<text x="4" y="' + rowY(1) + '" fill="#9C856E" font-family="\'Inter\',sans-serif" font-size="9" text-anchor="middle" dominant-baseline="central">' + baseFret + '</text>'; }
   if (barre) {
     const y = rowY(barre.fret - baseFret + 1), x1 = sx(barre.from), x2 = sx(barre.to);
     s += '<rect x="' + (x1 - 4.5).toFixed(1) + '" y="' + (y - 4.5).toFixed(1) + '" width="' + (x2 - x1 + 9).toFixed(1) + '" height="9" rx="4.5" fill="#2C1A0E"/>';
   }
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < nStr; i++) {
     const x = sx(i), v = frets[i];
     if (v === 'x') {
       const y = topY - 7;
@@ -538,7 +638,13 @@ function griffSVG(shape) {
 }
 
 function renderGriff(box, root, quality) {
-  const shape = getShape(root, quality);
+  if (MODE === 'uke') {
+    const shape = getUkeShape(root, quality);
+    if (!root) { box.innerHTML = '<span class="no-griff">·</span>'; return; }
+    box.innerHTML = shape ? griffSVG(shape) : '<span class="no-griff">·</span>';
+    return;
+  }
+  const shape = getGuitarShape(root, quality);
   box.innerHTML = shape ? griffSVG(shape) : '<span class="no-griff">·</span>';
 }
 
@@ -584,9 +690,8 @@ for (let i = 0; i < 8; i++) {
   inp.addEventListener('input', updateAll);
 }
 
-/* ── Akkord-Kreis ── */
+/* ── Kreis-Grundlagen ── */
 const SVGNS = 'http://www.w3.org/2000/svg';
-const svg = document.getElementById('chordCircle');
 const CX = 170, CY = 170;
 const DOT_R = 122;   // Notenpunkte-Ring
 const LABEL_R = 150; // Beschriftung
@@ -602,9 +707,7 @@ function el(name, attrs) {
   return e;
 }
 
-let arcLayer;
-function buildCircle() {
-  // statischer Ring: 12 farbige Notenpunkte + Labels
+function buildRing(target) {
   const ring = el('g', {});
   for (let i = 0; i < 12; i++) {
     const [dx, dy] = pt(i, DOT_R);
@@ -618,47 +721,17 @@ function buildCircle() {
     t.textContent = NOTES[i];
     ring.appendChild(t);
   }
-  svg.appendChild(ring);
-
-  // dynamische Pfeil-Ebene (wird bei jeder Eingabe neu gezeichnet)
-  arcLayer = el('g', { id: 'arcLayer' });
-  svg.appendChild(arcLayer);
-
-  // Zentrum-Text
-  const c1 = el('text', { id: 'cCapo', x: CX, y: CY - 8, fill: '#E8A838',
-    'font-family': "'Playfair Display', serif", 'font-size': 26, 'font-weight': 600,
-    'text-anchor': 'middle', 'dominant-baseline': 'central' });
-  const c2 = el('text', { id: 'cSub', x: CX, y: CY + 18, fill: 'rgba(245,239,230,0.6)',
-    'font-family': "'Inter', sans-serif", 'font-size': 11.5,
-    'text-anchor': 'middle', 'dominant-baseline': 'central' });
-  svg.appendChild(c1);
-  svg.appendChild(c2);
+  target.appendChild(ring);
 }
-
-function drawArc(soundIdx, capo, color, opacity) {
-  // Markierung an der Lied-Note (Start, gefüllt + weißer Ring)
-  const [sx, sy] = pt(soundIdx, DOT_R);
-  const marker = el('circle', { cx: sx, cy: sy, r: 12, fill: color,
-    stroke: '#F5EFE6', 'stroke-width': 2, opacity: opacity });
-
-  // ohne Capo: kein Pfeil, nur die Note markieren
-  if (capo === 0) { arcLayer.appendChild(marker); return; }
-
-  // glatte Bahn von Lied-Note (soundIdx) Halbton für Halbton nach unten
-  const steps = capo * 3;
-  let d = '';
-  const pts = [];
-  for (let s = 0; s <= steps; s++) {
-    const idx = soundIdx - (capo * s / steps);
-    pts.push(pt(idx, ARC_R));
-  }
-  pts.forEach((p, k) => { d += (k === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' '; });
-  arcLayer.appendChild(el('path', { d: d.trim(), fill: 'none', stroke: color,
-    'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: opacity }));
-
-  arcLayer.appendChild(marker);
-
-  // Pfeilspitze am gegriffenen Akkord (Ende)
+function buildCenter(target, idTop, idSub) {
+  target.appendChild(el('text', { id: idTop, x: CX, y: CY - 8, fill: '#E8A838',
+    'font-family': "'Playfair Display', serif", 'font-size': 26, 'font-weight': 600,
+    'text-anchor': 'middle', 'dominant-baseline': 'central' }));
+  target.appendChild(el('text', { id: idSub, x: CX, y: CY + 18, fill: 'rgba(245,239,230,0.6)',
+    'font-family': "'Inter', sans-serif", 'font-size': 11.5,
+    'text-anchor': 'middle', 'dominant-baseline': 'central' }));
+}
+function arrowHead(layer, pts, color, opacity) {
   const last = pts[pts.length - 1];
   const prev = pts[pts.length - 2];
   const ang = Math.atan2(last[1] - prev[1], last[0] - prev[0]);
@@ -668,10 +741,51 @@ function drawArc(soundIdx, capo, color, opacity) {
   const px = -Math.sin(ang), py = Math.cos(ang);
   const a1 = [bx + W * px, by + W * py];
   const a2 = [bx - W * px, by - W * py];
-  arcLayer.appendChild(el('polygon', {
+  layer.appendChild(el('polygon', {
     points: tipx.toFixed(1)+','+tipy.toFixed(1)+' '+a1[0].toFixed(1)+','+a1[1].toFixed(1)+' '+a2[0].toFixed(1)+','+a2[1].toFixed(1),
     fill: color, opacity: opacity
   }));
+}
+function pathFrom(pts) {
+  return pts.map((p, k) => (k === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+}
+
+/* ── Akkord-Kreis (Capo, Gitarre) ── */
+const svg = document.getElementById('chordCircle');
+let arcLayer;
+function buildCircle() {
+  buildRing(svg);
+  arcLayer = el('g', { id: 'arcLayer' });
+  svg.appendChild(arcLayer);
+  buildCenter(svg, 'cCapo', 'cSub');
+}
+
+function drawArc(soundIdx, capo, color, opacity) {
+  const [sx, sy] = pt(soundIdx, DOT_R);
+  const marker = el('circle', { cx: sx, cy: sy, r: 12, fill: color,
+    stroke: '#F5EFE6', 'stroke-width': 2, opacity: opacity });
+
+  if (capo === 0) { arcLayer.appendChild(marker); return; }
+
+  const steps = capo * 3;
+  const pts = [];
+  for (let s = 0; s <= steps; s++) {
+    const idx = soundIdx - (capo * s / steps);
+    pts.push(pt(idx, ARC_R));
+  }
+  arcLayer.appendChild(el('path', { d: pathFrom(pts), fill: 'none', stroke: color,
+    'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: opacity }));
+  arcLayer.appendChild(marker);
+  arrowHead(arcLayer, pts, color, opacity);
+}
+
+function usedRoots(capo) {
+  const used = new Set();
+  inputs.forEach(inp => {
+    const parsed = parseChord(inp.value);
+    if (parsed) used.add(transposeDown(parsed.root, capo - UKE_OFFSET));
+  });
+  return used;
 }
 
 function renderCircle(capo) {
@@ -683,7 +797,6 @@ function renderCircle(capo) {
     if (parsed) used.add(parsed.root);
   });
 
-  // Zentrum
   if (capo === 0) {
     document.getElementById('cCapo').textContent = 'Ohne Capo';
     document.getElementById('cSub').textContent = 'Griffe wie notiert';
@@ -693,7 +806,6 @@ function renderCircle(capo) {
   }
 
   if (used.size === 0) {
-    // Beispiel-Pfeil (gedimmt), damit der Kreis auch leer verständlich ist
     drawArc(NOTES.indexOf('A'), capo, '#E8A838', 0.28);
     return;
   }
@@ -702,6 +814,88 @@ function renderCircle(capo) {
     drawArc(i, capo, noteColor(i), 0.95);
   });
 }
+
+/* ── Halbton-Kreis (Gitarren-Form → Ukulele) ── */
+const ukeSvg = document.getElementById('ukeCircle');
+let ukeLayer;
+function buildUkeCircle() {
+  buildRing(ukeSvg);
+  ukeLayer = el('g', {});
+  ukeSvg.appendChild(ukeLayer);
+  buildCenter(ukeSvg, 'uTop', 'uSub');
+  document.getElementById('uTop').textContent = '+5';
+  document.getElementById('uSub').textContent = 'Halbtöne (Quarte)';
+}
+
+// zeichnet einen Bogen von der Gitarren-Form (ukeIdx − 5) bis zum Ukulele-Akkord (ukeIdx)
+function drawUkeSpan(ukeIdx, r, color, opacity, withNumbers) {
+  const startIdx = ukeIdx - UKE_OFFSET;
+  const steps = UKE_OFFSET * 4;
+  const pts = [];
+  for (let s = 0; s <= steps; s++) pts.push(pt(startIdx + UKE_OFFSET * s / steps, r));
+  ukeLayer.appendChild(el('path', { d: pathFrom(pts), fill: 'none', stroke: color,
+    'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: opacity }));
+
+  // Halbton-Schritte als Punkte auf der Bahn
+  for (let k = 1; k < UKE_OFFSET; k++) {
+    const [tx, ty] = pt(startIdx + k, r);
+    ukeLayer.appendChild(el('circle', { cx: tx, cy: ty, r: 3.2, fill: '#2C1A0E',
+      stroke: color, 'stroke-width': 1.6, opacity: opacity }));
+  }
+  if (withNumbers) {
+    for (let k = 1; k <= UKE_OFFSET; k++) {
+      const [nx, ny] = pt(startIdx + k - 0.5, r - 16);
+      const t = el('text', { x: nx, y: ny, fill: 'rgba(245,239,230,0.75)',
+        'font-family': "'Inter', sans-serif", 'font-size': 10, 'font-weight': 500,
+        'text-anchor': 'middle', 'dominant-baseline': 'central', opacity: Math.max(opacity, 0.5) });
+      t.textContent = k;
+      ukeLayer.appendChild(t);
+    }
+  }
+  arrowHead(ukeLayer, pts, color, opacity);
+
+  // Start: Ring an der Gitarren-Form, Ziel: gefüllter Punkt am Ukulele-Akkord
+  const gi = ((startIdx % 12) + 12) % 12;
+  const [gx, gy] = pt(gi, DOT_R);
+  ukeLayer.appendChild(el('circle', { cx: gx, cy: gy, r: 13, fill: 'none',
+    stroke: '#F5EFE6', 'stroke-width': 2, 'stroke-dasharray': '3 2.5', opacity: opacity }));
+  const [ux, uy] = pt(ukeIdx, DOT_R);
+  ukeLayer.appendChild(el('circle', { cx: ux, cy: uy, r: 12, fill: color,
+    stroke: '#F5EFE6', 'stroke-width': 2, opacity: opacity }));
+}
+
+function renderUkeCircle(capo) {
+  while (ukeLayer.firstChild) ukeLayer.removeChild(ukeLayer.firstChild);
+  const used = Array.from(usedRoots(capo));
+  if (used.length === 0) {
+    // Beispiel: G-Form auf der Gitarre → C auf der Ukulele
+    drawUkeSpan(NOTES.indexOf('C'), ARC_R, '#E8A838', 0.3, true);
+    return;
+  }
+  used.forEach((root, k) => {
+    const i = NOTES.indexOf(root);
+    const r = Math.max(ARC_R - k * 9, 40);
+    drawUkeSpan(i, r, noteColor(i), 0.95, k === 0);
+  });
+}
+
+/* ── Modus umschalten ── */
+function setMode(mode) {
+  MODE = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    const on = b.dataset.mode === mode;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  const uke = mode === 'uke';
+  document.getElementById('notationBlock').hidden = uke;
+  document.getElementById('circleBlock').hidden = uke;
+  document.getElementById('ukeBlock').hidden = !uke;
+  updateAll();
+}
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.addEventListener('click', () => setMode(b.dataset.mode));
+});
 
 function updateAll() {
   const capo = parseInt(document.getElementById('capoSlider').value);
@@ -722,13 +916,15 @@ function updateAll() {
       renderGriff(griff, null);
       return;
     }
-    const newRoot = transposeDown(parsed.root, capo);
+    // Gitarre: Capo rechnet nach unten. Ukulele: gleicher Griff klingt 5 Halbtöne höher.
+    const shift = MODE === 'uke' ? capo - UKE_OFFSET : capo;
+    const newRoot = transposeDown(parsed.root, shift);
     const newChord = newRoot + parsed.quality;
     res.textContent = newChord;
     res.className = 'chord-result-box' + (isSimple(newRoot, parsed.quality) ? ' simplified' : '');
     renderGriff(griff, newRoot, parsed.quality);
   });
-  renderCircle(capo);
+  if (MODE === 'uke') renderUkeCircle(capo); else renderCircle(capo);
   document.getElementById('clearAll').disabled = inputs.every(i => !i.value.trim());
 }
 
@@ -746,6 +942,7 @@ document.getElementById('clearAll').addEventListener('click', function() {
 });
 
 buildCircle();
+buildUkeCircle();
 updateAll();
 </script>
 </body>
